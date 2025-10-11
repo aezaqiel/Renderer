@@ -21,6 +21,8 @@ add_executable(${PROJECT_NAME}
     src/Core/Logger.cpp
     src/Core/Application.hpp
     src/Core/Application.cpp
+    src/Core/KeyCodes.hpp
+    src/Core/Events.hpp
 )
 
 target_include_directories(${PROJECT_NAME}
