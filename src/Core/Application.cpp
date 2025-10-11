@@ -1,6 +1,6 @@
 #include "Application.hpp"
 
-#include <print>
+#include "Logger.hpp"
 
 namespace Renderer {
 
@@ -14,7 +14,7 @@ namespace Renderer {
 
     void Application::Run()
     {
-        std::println("Running...");
+        LOG_INFO("Running...");
     }
 
 }

@@ -17,6 +17,8 @@ add_executable(${PROJECT_NAME}
     src/Main.cpp
 
     src/Core/Types.hpp
+    src/Core/Logger.hpp
+    src/Core/Logger.cpp
     src/Core/Application.hpp
     src/Core/Application.cpp
 )
