@@ -12,6 +12,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_subdirectory(thirdparty/spdlog)
+add_subdirectory(thirdparty/glfw)
 
 add_executable(${PROJECT_NAME}
     src/Main.cpp
@@ -33,4 +34,18 @@ PRIVATE
 target_link_libraries(${PROJECT_NAME}
 PRIVATE
     spdlog
+    glfw
 )
+
+target_compile_definitions(${PROJECT_NAME}
+PRIVATE
+    NOMINMAX
+    GLFW_INCLUDE_NONE
+)
+
+if(WIN32)
+    target_compile_definitions(${PROJECT_NAME}
+    PRIVATE
+        GLFW_EXPOSE_NATIVE_WIN32
+    )
+endif()
