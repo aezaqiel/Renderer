@@ -2,6 +2,7 @@
 
 #include "Core/Window.hpp"
 #include "Vulkan/VulkanContext.hpp"
+#include "Vulkan/VulkanSwapchain.hpp"
 
 namespace Renderer {
 
@@ -11,7 +12,7 @@ namespace Renderer {
         Renderer(const std::shared_ptr<Window>& window);
         ~Renderer() = default;
 
-        void Resize();
+        void Resize(u32 width, u32 height);
 
         void BeginFrame();
         void EndFrame();
@@ -22,6 +23,7 @@ namespace Renderer {
         std::shared_ptr<Window> m_Window;
 
         std::shared_ptr<VulkanContext> m_Context;
+        std::unique_ptr<VulkanSwapchain> m_Swapchain;
     };
 
 }

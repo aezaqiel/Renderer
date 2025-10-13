@@ -52,8 +52,8 @@ namespace Renderer {
                 return false;
             });
 
-            dispatcher.Dispatch<WindowResizedEvent>([&](const WindowResizedEvent&) -> bool {
-                m_Renderer->Resize();
+            dispatcher.Dispatch<WindowResizedEvent>([&](const WindowResizedEvent& e) -> bool {
+                m_Renderer->Resize(e.width, e.height);
                 return false;
             });
 

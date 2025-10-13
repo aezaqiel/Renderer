@@ -1,7 +1,6 @@
 #pragma once
 
 #include <optional>
-#include <array>
 #include <set>
 
 #include "Core/Types.hpp"
@@ -85,6 +84,11 @@ namespace Renderer {
                 return m_QueueIndices.Present();
             LOG_ERROR("Present queue index not set");
             return std::numeric_limits<u32>::max();
+        }
+
+        inline std::set<u32> GetUniqueQueueIndices() const
+        {
+            return m_QueueIndices.GetUniqueIndices();
         }
 
         inline const VkDevice& GetDevice() const

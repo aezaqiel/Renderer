@@ -38,6 +38,8 @@ add_executable(${PROJECT_NAME}
     src/Renderer/Vulkan/VulkanTypes.hpp
     src/Renderer/Vulkan/VulkanContext.hpp
     src/Renderer/Vulkan/VulkanContext.cpp
+    src/Renderer/Vulkan/VulkanSwapchain.hpp
+    src/Renderer/Vulkan/VulkanSwapchain.cpp
 )
 
 target_include_directories(${PROJECT_NAME}

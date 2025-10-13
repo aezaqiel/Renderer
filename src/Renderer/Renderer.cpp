@@ -6,10 +6,19 @@ namespace Renderer {
         : m_Window(window)
     {
         m_Context = std::make_shared<VulkanContext>(*m_Window);
+
+        VulkanSwapchain::Config swapchainConfig {
+            .extent = {
+                .width = m_Window->Width(),
+                .height = m_Window->Height()
+            }
+        };
+        m_Swapchain = std::make_unique<VulkanSwapchain>(m_Context, swapchainConfig);
     }
 
-    void Renderer::Resize()
+    void Renderer::Resize(u32 width, u32 height)
     {
+        m_Swapchain->Recreate(VkExtent2D { width, height });
     }
 
     void Renderer::BeginFrame()
