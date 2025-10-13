@@ -8,12 +8,14 @@ namespace Renderer {
 
         m_EventQueue = std::make_unique<EventQueue>();
 
-        m_Window = std::make_unique<Window>(Window::Config{
+        m_Window = std::make_shared<Window>(Window::Config{
             .width = 1280,
             .height = 720,
             .title = "Renderer"
         });
         m_Window->BindEventQueue(m_EventQueue.get());
+
+        m_Renderer = std::make_unique<Renderer>(m_Window);
     }
 
     Application::~Application()
@@ -28,6 +30,9 @@ namespace Renderer {
             ProcessEvents();
 
             if (!m_Minimized) {
+                m_Renderer->BeginFrame();
+                m_Renderer->Draw();
+                m_Renderer->EndFrame();
             }
         }
     }
@@ -44,6 +49,11 @@ namespace Renderer {
 
             dispatcher.Dispatch<WindowMinimizeEvent>([&](const WindowMinimizeEvent& e) -> bool {
                 m_Minimized = e.minimized;
+                return false;
+            });
+
+            dispatcher.Dispatch<WindowResizedEvent>([&](const WindowResizedEvent&) -> bool {
+                m_Renderer->Resize();
                 return false;
             });
 

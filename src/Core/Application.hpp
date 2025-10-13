@@ -2,6 +2,7 @@
 
 #include "Events.hpp"
 #include "Window.hpp"
+#include "Renderer/Renderer.hpp"
 
 namespace Renderer {
 
@@ -26,7 +27,8 @@ namespace Renderer {
         bool m_Minimized { false };
 
         std::unique_ptr<EventQueue> m_EventQueue;
-        std::unique_ptr<Window> m_Window;
+        std::shared_ptr<Window> m_Window;
+        std::unique_ptr<Renderer> m_Renderer;
     };
 
 }

@@ -26,6 +26,11 @@ add_executable(${PROJECT_NAME}
     src/Core/Events.hpp
     src/Core/Window.hpp
     src/Core/Window.cpp
+
+    src/Renderer/Renderer.hpp
+    src/Renderer/Renderer.cpp
+
+    src/Renderer/Vulkan/VulkanTypes.hpp
 )
 
 target_include_directories(${PROJECT_NAME}
