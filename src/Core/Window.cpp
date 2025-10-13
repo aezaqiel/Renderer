@@ -4,6 +4,7 @@
 #include <GLFW/glfw3native.h>
 
 #include "Logger.hpp"
+#include "Renderer/Vulkan/VulkanTypes.hpp"
 
 namespace Renderer {
 
@@ -106,6 +107,8 @@ namespace Renderer {
             WindowData& data = *reinterpret_cast<WindowData*>(glfwGetWindowUserPointer(window));
             data.eventQueue->Push(MouseScrolledEvent(static_cast<f32>(x), static_cast<f32>(y)));
         });
+
+        LOG_INFO("Created window [{}] ({}, {})", glfwGetWindowTitle(m_Window), m_Data.width, m_Data.height);
     }
 
     Window::~Window()
@@ -118,6 +121,22 @@ namespace Renderer {
     void Window::PollEvents()
     {
         glfwPollEvents();
+    }
+
+    std::vector<const char*> Window::GetRequiredVulkanExtensions()
+    {
+        u32 count = 0;
+        const char** extensions = glfwGetRequiredInstanceExtensions(&count);
+
+        return std::vector<const char*>(extensions, extensions + count);
+    }
+
+    VkSurfaceKHR Window::CreateVulkanSurface(const VkInstance& instance) const
+    {
+        VkSurfaceKHR surface { VK_NULL_HANDLE };
+        VK_CHECK(glfwCreateWindowSurface(instance, m_Window, nullptr, &surface));
+
+        return surface;
     }
 
 }

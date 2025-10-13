@@ -5,6 +5,8 @@
 #include "Types.hpp"
 #include "Events.hpp"
 
+#include "Renderer/Vulkan/VulkanTypes.hpp"
+
 struct GLFWwindow;
 
 namespace Renderer {
@@ -27,6 +29,9 @@ namespace Renderer {
         inline u32 Width() const { return m_Data.width; };
         inline u32 Height() const { return m_Data.height; };
         inline GLFWwindow* Native() const { return m_Window; }
+
+        static std::vector<const char*> GetRequiredVulkanExtensions();
+        VkSurfaceKHR CreateVulkanSurface(const VkInstance& instance) const;
     
     protected:
         static void PollEvents();

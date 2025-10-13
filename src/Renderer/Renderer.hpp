@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/Window.hpp"
+#include "Vulkan/VulkanContext.hpp"
 
 namespace Renderer {
 
@@ -8,7 +9,7 @@ namespace Renderer {
     {
     public:
         Renderer(const std::shared_ptr<Window>& window);
-        ~Renderer();
+        ~Renderer() = default;
 
         void Resize();
 
@@ -19,6 +20,8 @@ namespace Renderer {
 
     private:
         std::shared_ptr<Window> m_Window;
+
+        std::shared_ptr<VulkanContext> m_Context;
     };
 
 }
