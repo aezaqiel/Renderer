@@ -11,8 +11,13 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+if(WIN32)
+    set(VOLK_STATIC_DEFINES VK_USE_PLATFORM_WIN32_KHR)
+endif()
+
 add_subdirectory(thirdparty/spdlog)
 add_subdirectory(thirdparty/glfw)
+add_subdirectory(thirdparty/volk)
 
 add_executable(${PROJECT_NAME}
     src/Main.cpp
@@ -42,6 +47,7 @@ target_link_libraries(${PROJECT_NAME}
 PRIVATE
     spdlog
     glfw
+    volk
 )
 
 target_compile_definitions(${PROJECT_NAME}
@@ -54,5 +60,6 @@ if(WIN32)
     target_compile_definitions(${PROJECT_NAME}
     PRIVATE
         GLFW_EXPOSE_NATIVE_WIN32
+        VK_USE_PLATFORM_WIN32_KHR
     )
 endif()
