@@ -11,6 +11,8 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+find_package(Vulkan REQUIRED COMPONENTS glslc)
+
 if(WIN32)
     set(VOLK_STATIC_DEFINES VK_USE_PLATFORM_WIN32_KHR)
 endif()
@@ -40,6 +42,8 @@ add_executable(${PROJECT_NAME}
     src/Renderer/Vulkan/VulkanContext.cpp
     src/Renderer/Vulkan/VulkanSwapchain.hpp
     src/Renderer/Vulkan/VulkanSwapchain.cpp
+    src/Renderer/Vulkan/VulkanShader.hpp
+    src/Renderer/Vulkan/VulkanShader.cpp
 )
 
 target_include_directories(${PROJECT_NAME}
@@ -67,3 +71,42 @@ if(WIN32)
         VK_USE_PLATFORM_WIN32_KHR
     )
 endif()
+
+find_program(glslc_exe NAMES glslc HINTS Vulkan::glslc)
+
+set(SHADER_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/shaders)
+set(SHADER_BIN_DIR ${CMAKE_CURRENT_BINARY_DIR}/shaders)
+
+file(GLOB SHADERS
+    ${SHADER_SRC_DIR}/*.vert
+    ${SHADER_SRC_DIR}/*.frag
+    ${SHADER_SRC_DIR}/*.comp
+    ${SHADER_SRC_DIR}/*.geom
+    ${SHADER_SRC_DIR}/*.tesc
+    ${SHADER_SRC_DIR}/*.tese
+    ${SHADER_SRC_DIR}/*.mesh
+    ${SHADER_SRC_DIR}/*.task
+    ${SHADER_SRC_DIR}/*.rgen
+    ${SHADER_SRC_DIR}/*.rchit
+    ${SHADER_SRC_DIR}/*.rmiss
+)
+
+add_custom_command(
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SHADER_BIN_DIR}
+    OUTPUT ${SHADER_BIN_DIR}
+    COMMENT "Creating ${SHADER_BIN_DIR}"
+)
+
+foreach(source IN LISTS SHADERS)
+    get_filename_component(FILENAME ${source} NAME)
+    add_custom_command(
+        COMMAND ${glslc_exe} --target-spv=spv1.4 -o ${SHADER_BIN_DIR}/${FILENAME}.spv ${source}
+        OUTPUT ${SHADER_BIN_DIR}/${FILENAME}.spv
+        DEPENDS ${source} ${SHADER_BIN_DIR}
+        COMMENT "Compiling ${FILENAME}"
+    )
+    list(APPEND SPV_SHADERS ${SHADER_BIN_DIR}/${FILENAME}.spv)
+endforeach()
+
+add_custom_target(compile_shaders ALL DEPENDS ${SPV_SHADERS})
+add_dependencies(${PROJECT_NAME} compile_shaders)

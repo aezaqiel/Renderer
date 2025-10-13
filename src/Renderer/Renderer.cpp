@@ -1,5 +1,8 @@
 #include "Renderer.hpp"
 
+// TEMPORARY
+#include "Vulkan/VulkanShader.hpp"
+
 namespace Renderer {
 
     Renderer::Renderer(const std::shared_ptr<Window>& window)
@@ -14,6 +17,9 @@ namespace Renderer {
             }
         };
         m_Swapchain = std::make_unique<VulkanSwapchain>(m_Context, swapchainConfig);
+
+        VulkanShader vertexShader(m_Context, "shaders/triangle.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+        VulkanShader fragmentShader(m_Context, "shaders/triangle.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
     }
 
     void Renderer::Resize(u32 width, u32 height)
