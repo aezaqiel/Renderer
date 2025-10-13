@@ -77,14 +77,23 @@ namespace Renderer {
         }
 #endif
 
-        static constexpr VkApplicationInfo info {
+        u32 apiVersion = 0;
+        vkEnumerateInstanceVersion(&apiVersion);
+        LOG_INFO("Vulkan API variant {} version {}.{}.{}",
+            VK_API_VERSION_VARIANT(apiVersion),
+            VK_API_VERSION_MAJOR(apiVersion),
+            VK_API_VERSION_MINOR(apiVersion),
+            VK_API_VERSION_PATCH(apiVersion)
+        );
+
+        VkApplicationInfo info {
             .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
             .pNext = nullptr,
             .pApplicationName = "Renderer",
             .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
             .pEngineName = "No Engine",
             .engineVersion = VK_MAKE_VERSION(1, 0, 0),
-            .apiVersion = VK_API_VERSION_1_4
+            .apiVersion = apiVersion
         };
 
         VkInstanceCreateInfo createInfo {
