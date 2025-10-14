@@ -24,6 +24,7 @@ namespace Renderer {
             vkDestroySemaphore(m_Context->GetDevice(), m_ImageAvailableSemaphore, nullptr);
 
         CleanupSwapchainResources();
+
         if (m_Swapchain != VK_NULL_HANDLE)
             vkDestroySwapchainKHR(m_Context->GetDevice(), m_Swapchain, nullptr);
     }
@@ -74,6 +75,8 @@ namespace Renderer {
     void VulkanSwapchain::Recreate(VkExtent2D extent)
     {
         vkDeviceWaitIdle(m_Context->GetDevice());
+
+        m_Config.extent = extent;
 
         VkSwapchainKHR oldSwapchain = m_Swapchain;
         CreateSwapchain(oldSwapchain);
