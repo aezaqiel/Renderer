@@ -3,6 +3,7 @@
 #include "Core/Window.hpp"
 #include "Vulkan/VulkanContext.hpp"
 #include "Vulkan/VulkanSwapchain.hpp"
+#include "Vulkan/VulkanGraphicsPipeline.hpp"
 
 namespace Renderer {
 
@@ -24,6 +25,7 @@ namespace Renderer {
 
         std::shared_ptr<VulkanContext> m_Context;
         std::unique_ptr<VulkanSwapchain> m_Swapchain;
+        std::unique_ptr<VulkanGraphicsPipeline> m_GraphicsPipeline;
     };
 
 }
