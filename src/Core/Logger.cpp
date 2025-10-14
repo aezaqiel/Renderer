@@ -18,7 +18,7 @@ namespace Renderer {
 
         std::vector<spdlog::sink_ptr> sinks = {
             std::make_shared<spdlog::sinks::stdout_color_sink_mt>(),
-            std::make_shared<spdlog::sinks::basic_file_sink_mt>(logDir + "Renderer.log", true)
+            std::make_shared<spdlog::sinks::basic_file_sink_mt>(logDir + "/Renderer.log", true)
         };
 
         for (auto& sink : sinks)
