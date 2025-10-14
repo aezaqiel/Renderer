@@ -30,9 +30,7 @@ namespace Renderer {
             ProcessEvents();
 
             if (!m_Minimized) {
-                m_Renderer->BeginFrame();
                 m_Renderer->Draw();
-                m_Renderer->EndFrame();
             }
         }
     }

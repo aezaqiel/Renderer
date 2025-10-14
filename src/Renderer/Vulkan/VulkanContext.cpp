@@ -19,11 +19,16 @@ namespace Renderer {
         PickPhysicalDevice();
         LOG_INFO("Physical device: {}", m_PhysicalDeviceProperties.deviceName);
 
-        m_QueueIndices = FindQueueFamilies(m_PhysicalDevice, m_Surface);
-        LOG_INFO("Graphics queue family index: {}", m_QueueIndices.Graphics());
-        LOG_INFO("Compute queue family index: {}", m_QueueIndices.Compute());
-        LOG_INFO("Transfer queue family index: {}", m_QueueIndices.Transfer());
-        LOG_INFO("Present queue family index: {}", m_QueueIndices.Present());
+        auto indices = FindQueueFamilies(m_PhysicalDevice, m_Surface);
+        m_GraphicsQueue.index = indices.Graphics();
+        m_ComputeQueue.index = indices.Compute();
+        m_TransferQueue.index = indices.Transfer();
+        m_PresentQueue.index = indices.Present();
+
+        LOG_INFO("Graphics queue family index: {}", m_GraphicsQueue.index);
+        LOG_INFO("Compute queue family index: {}", m_ComputeQueue.index);
+        LOG_INFO("Transfer queue family index: {}", m_TransferQueue.index);
+        LOG_INFO("Present queue family index: {}", m_PresentQueue.index);
 
         CreateDevice();
     }
@@ -271,9 +276,9 @@ namespace Renderer {
         }
 
         std::vector<VkDeviceQueueCreateInfo> queueInfos;
-        queueInfos.reserve(m_QueueIndices.GetUniqueIndices().size());
+        queueInfos.reserve(GetUniqueQueueIndices().size());
 
-        for (u32 i : m_QueueIndices.GetUniqueIndices()) {
+        for (u32 i : GetUniqueQueueIndices()) {
             static f32 priority[] = { 1.0f };
 
             queueInfos.emplace_back(VkDeviceQueueCreateInfo{
@@ -320,10 +325,10 @@ namespace Renderer {
         VK_CHECK(vkCreateDevice(m_PhysicalDevice, &createInfo, nullptr, &m_Device));
         volkLoadDevice(m_Device);
 
-        vkGetDeviceQueue(m_Device, m_QueueIndices.Graphics(), 0, &m_GraphicsQueue);
-        vkGetDeviceQueue(m_Device, m_QueueIndices.Compute(), 0, &m_ComputeQueue);
-        vkGetDeviceQueue(m_Device, m_QueueIndices.Transfer(), 0, &m_TransferQueue);
-        vkGetDeviceQueue(m_Device, m_QueueIndices.Present(), 0, &m_PresentQueue);
+        vkGetDeviceQueue(m_Device, m_GraphicsQueue.index, 0, &m_GraphicsQueue.queue);
+        vkGetDeviceQueue(m_Device, m_ComputeQueue.index, 0, &m_ComputeQueue.queue);
+        vkGetDeviceQueue(m_Device, m_TransferQueue.index, 0, &m_TransferQueue.queue);
+        vkGetDeviceQueue(m_Device, m_PresentQueue.index, 0, &m_PresentQueue.queue);
 
         LOG_INFO("Device extensions:");
         for (const auto& extension : s_DeviceExtensions)

@@ -9,6 +9,12 @@
 
 namespace Renderer {
 
+    struct DeviceQueue
+    {
+        u32 index { std::numeric_limits<u32>::max() };
+        VkQueue queue { VK_NULL_HANDLE };
+    };
+
     class VulkanContext
     {
     public:
@@ -34,61 +40,86 @@ namespace Renderer {
             return m_PhysicalDeviceProperties;
         }
 
-        inline const VkQueue& GetGraphicsQueue() const
+        inline const DeviceQueue& GetGraphicsDeviceQueue() const
         {
             return m_GraphicsQueue;
         }
 
-        inline u32 GetGraphicsQueueIndex() const
+        inline const VkQueue& GetGraphicsQueue() const
         {
-            if (m_QueueIndices.HasGraphics())
-                return m_QueueIndices.Graphics();
-            LOG_ERROR("Graphics queue index not set");
-            return std::numeric_limits<u32>::max();
+            return m_GraphicsQueue.queue;
         }
 
-        inline const VkQueue& GetComputeQueue()
+        inline u32 GetGraphicsQueueIndex() const
+        {
+            u32 index = m_GraphicsQueue.index;
+            if (index == std::numeric_limits<u32>::max())
+                LOG_ERROR("Graphics queue index not set");
+            return index;
+        }
+
+        inline const DeviceQueue& GetComputeDeviceQueue() const
         {
             return m_ComputeQueue;
         }
 
-        inline u32 GetComputeQueue() const
+        inline const VkQueue& GetComputeQueue()
         {
-            if (m_QueueIndices.HasCompute())
-                return m_QueueIndices.Compute();
-            LOG_ERROR("Compute queue index not set");
-            return std::numeric_limits<u32>::max();
+            return m_ComputeQueue.queue;
         }
 
-        inline const VkQueue& GetTransferQueue() const
+        inline u32 GetComputeQueueIndex() const
+        {
+            u32 index = m_ComputeQueue.index;
+            if (index == std::numeric_limits<u32>::max())
+                LOG_ERROR("Compute queue index not set");
+            return index;
+        }
+
+        inline const DeviceQueue& GetTransferDeviceQueue() const
         {
             return m_TransferQueue;
         }
 
-        inline u32 GetTransferQueueIndex() const
+        inline const VkQueue& GetTransferQueue() const
         {
-            if (m_QueueIndices.HasTransfer())
-                return m_QueueIndices.Transfer();
-            LOG_ERROR("Transfer queue index not set");
-            return std::numeric_limits<u32>::max();
+            return m_TransferQueue.queue;
         }
 
-        inline const VkQueue& GetPresentQueue() const
+        inline u32 GetTransferQueueIndex() const
+        {
+            u32 index = m_TransferQueue.index;
+            if (index == std::numeric_limits<u32>::max())
+                LOG_ERROR("Transfer queue index not set");
+            return index;
+        }
+
+        inline const DeviceQueue& GetPresentDeviceQueue() const
         {
             return m_PresentQueue;
         }
 
+        inline const VkQueue& GetPresentQueue() const
+        {
+            return m_PresentQueue.queue;
+        }
+
         inline u32 GetPresentQueueIndex() const
         {
-            if (m_QueueIndices.HasPresent())
-                return m_QueueIndices.Present();
-            LOG_ERROR("Present queue index not set");
-            return std::numeric_limits<u32>::max();
+            u32 index = m_PresentQueue.index;
+            if (index == std::numeric_limits<u32>::max())
+                LOG_ERROR("Present queue index not set");
+            return index;
         }
 
         inline std::set<u32> GetUniqueQueueIndices() const
         {
-            return m_QueueIndices.GetUniqueIndices();
+            return std::set<u32> {
+                m_GraphicsQueue.index,
+                m_ComputeQueue.index,
+                m_TransferQueue.index,
+                m_PresentQueue.index
+            };
         }
 
         inline const VkDevice& GetDevice() const
@@ -159,11 +190,11 @@ namespace Renderer {
         VkPhysicalDevice m_PhysicalDevice { VK_NULL_HANDLE };
         VkPhysicalDeviceProperties m_PhysicalDeviceProperties;
 
-        QueueFamilyIndices m_QueueIndices;
-        VkQueue m_GraphicsQueue { VK_NULL_HANDLE };
-        VkQueue m_ComputeQueue { VK_NULL_HANDLE };
-        VkQueue m_TransferQueue { VK_NULL_HANDLE };
-        VkQueue m_PresentQueue { VK_NULL_HANDLE };
+        // QueueFamilyIndices m_QueueIndices;
+        DeviceQueue m_GraphicsQueue;
+        DeviceQueue m_ComputeQueue;
+        DeviceQueue m_TransferQueue;
+        DeviceQueue m_PresentQueue;
 
         VkDevice m_Device { VK_NULL_HANDLE };
     };

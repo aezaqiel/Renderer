@@ -46,6 +46,8 @@ add_executable(${PROJECT_NAME}
     src/Renderer/Vulkan/VulkanShader.cpp
     src/Renderer/Vulkan/VulkanGraphicsPipeline.hpp
     src/Renderer/Vulkan/VulkanGraphicsPipeline.cpp
+    src/Renderer/Vulkan/VulkanCommandRecorder.hpp
+    src/Renderer/Vulkan/VulkanCommandRecorder.cpp
 )
 
 target_include_directories(${PROJECT_NAME}

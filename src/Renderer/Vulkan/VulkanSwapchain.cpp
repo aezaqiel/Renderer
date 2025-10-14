@@ -8,29 +8,44 @@ namespace Renderer {
         : m_Context(context), m_Config(config)
     {
         CreateSwapchain();
+
+        static constexpr VkSemaphoreCreateInfo semaphoreInfo {
+            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+            .pNext = nullptr,
+            .flags = 0
+        };
+
+        VK_CHECK(vkCreateSemaphore(m_Context->GetDevice(), &semaphoreInfo, nullptr, &m_ImageAvailableSemaphore));
     }
 
     VulkanSwapchain::~VulkanSwapchain()
     {
+        if (m_ImageAvailableSemaphore != VK_NULL_HANDLE)
+            vkDestroySemaphore(m_Context->GetDevice(), m_ImageAvailableSemaphore, nullptr);
+
         CleanupSwapchainResources();
-        vkDestroySwapchainKHR(m_Context->GetDevice(), m_Swapchain, nullptr);
+        if (m_Swapchain != VK_NULL_HANDLE)
+            vkDestroySwapchainKHR(m_Context->GetDevice(), m_Swapchain, nullptr);
     }
 
-    std::expected<u32, VkResult> VulkanSwapchain::AcquireNextImage(VkSemaphore& signalSemaphore, u64 timeout) const
+    std::expected<const VkSemaphore, VkResult> VulkanSwapchain::AcquireNextImage(u64 timeout)
     {
         if (m_Swapchain == VK_NULL_HANDLE)
-            return VK_ERROR_INITIALIZATION_FAILED;
+            return std::unexpected<VkResult>(VK_ERROR_INITIALIZATION_FAILED);
 
-        u32 index;
-        VkResult result = vkAcquireNextImageKHR(m_Context->GetDevice(), m_Swapchain, timeout, signalSemaphore, VK_NULL_HANDLE, &index);
+        // TODO: Will not work with multiple frame in flight (need multiple semaphores also)
+        vkWaitForFences(m_Context->GetDevice(), 1, &m_ImagePresentFences[m_CurrentImageIndex], VK_TRUE, std::numeric_limits<u64>::max());
 
-        if (result == VK_SUCCESS)
-            return index;
+        VkResult result = vkAcquireNextImageKHR(m_Context->GetDevice(), m_Swapchain, timeout, m_ImageAvailableSemaphore, VK_NULL_HANDLE, &m_CurrentImageIndex);
+        if (result != VK_SUCCESS)
+            return std::unexpected<VkResult>(result);
 
-        return std::unexpected<VkResult>(result);
+        vkResetFences(m_Context->GetDevice(), 1, &m_ImagePresentFences[m_CurrentImageIndex]);
+
+        return m_ImageAvailableSemaphore;
     }
 
-    VkResult VulkanSwapchain::Present(const VkQueue& presentQueue, u32 imageIndex, const VkSemaphore& waitSemaphore, const VkFence& signalFence) const
+    VkResult VulkanSwapchain::Present(const VkQueue& presentQueue, const VkSemaphore& waitSemaphore) const
     {
         if (m_Swapchain == VK_NULL_HANDLE)
             return VK_ERROR_INITIALIZATION_FAILED;
@@ -39,7 +54,7 @@ namespace Renderer {
             .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_FENCE_INFO_KHR,
             .pNext = nullptr,
             .swapchainCount = 1,
-            .pFences = &signalFence
+            .pFences = &m_ImagePresentFences[m_CurrentImageIndex]
         };
 
         VkPresentInfoKHR presentInfo {
@@ -49,7 +64,7 @@ namespace Renderer {
             .pWaitSemaphores = &waitSemaphore,
             .swapchainCount = 1,
             .pSwapchains = &m_Swapchain,
-            .pImageIndices = &imageIndex,
+            .pImageIndices = &m_CurrentImageIndex,
             .pResults = nullptr
         };
 
@@ -222,6 +237,16 @@ namespace Renderer {
             VK_CHECK(vkCreateImageView(m_Context->GetDevice(), &viewInfo, nullptr, &m_ImageViews.at(i)));
         }
 
+        static constexpr VkFenceCreateInfo fenceInfo {
+            .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+            .pNext = nullptr,
+            .flags = VK_FENCE_CREATE_SIGNALED_BIT
+        };
+
+        m_ImagePresentFences.resize(m_ImageCount);
+        for (auto& fence : m_ImagePresentFences)
+            VK_CHECK(vkCreateFence(m_Context->GetDevice(), &fenceInfo, nullptr, &fence));
+
         if (oldSwapchain != VK_NULL_HANDLE)
             vkDestroySwapchainKHR(m_Context->GetDevice(), oldSwapchain, nullptr);
 
@@ -230,11 +255,15 @@ namespace Renderer {
 
     void VulkanSwapchain::CleanupSwapchainResources()
     {
-        for (auto& view : m_ImageViews) {
-            vkDestroyImageView(m_Context->GetDevice(), view, nullptr);
+        for (auto& fence : m_ImagePresentFences) {
+            if (fence != VK_NULL_HANDLE)
+                vkDestroyFence(m_Context->GetDevice(), fence, nullptr);
         }
-        m_ImageViews.clear();
-        m_Images.clear();
+
+        for (auto& view : m_ImageViews) {
+            if (view != VK_NULL_HANDLE)
+                vkDestroyImageView(m_Context->GetDevice(), view, nullptr);
+        }
     }
 
 }
