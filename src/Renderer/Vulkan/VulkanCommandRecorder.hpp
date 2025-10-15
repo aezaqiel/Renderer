@@ -12,7 +12,7 @@ namespace Renderer {
         ~VulkanCommandRecorder();
 
         void Record(const std::function<void(const VkCommandBuffer&)>& task);
-        const VkSemaphore& Submit(const std::vector<VkSemaphore>& waitSemaphore, const std::vector<VkPipelineStageFlags>& waitStages);
+        void Submit(const std::vector<VkSemaphore>& waitSemaphore, const std::vector<VkPipelineStageFlags>& waitStages, const std::vector<VkSemaphore>& signalSemaphores, VkFence& signalFence);
 
     private:
         std::shared_ptr<VulkanContext> m_Context;
@@ -20,9 +20,6 @@ namespace Renderer {
 
         VkCommandPool m_CommandPool { VK_NULL_HANDLE };
         VkCommandBuffer m_CommandBuffer { VK_NULL_HANDLE };
-
-        VkSemaphore m_InFlightSemaphore { VK_NULL_HANDLE };
-        VkFence m_InFlightFence { VK_NULL_HANDLE };
     };
 
 }

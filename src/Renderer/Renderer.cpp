@@ -18,7 +18,8 @@ namespace Renderer {
         };
         m_Swapchain = std::make_unique<VulkanSwapchain>(m_Context, swapchainConfig);
 
-        m_Command = std::make_unique<VulkanCommandRecorder>(m_Context, m_Context->GetGraphicsDeviceQueue());
+        for (usize i = 0; i < s_FrameInFlight; ++i)
+            m_Commands.at(i) = std::make_unique<VulkanCommandRecorder>(m_Context, m_Context->GetGraphicsDeviceQueue());
 
         VulkanGraphicsPipeline::Config graphicsPipelineConfig;
         graphicsPipelineConfig.shaders.push_back(std::make_shared<VulkanShader>(m_Context, "shaders/triangle.vert.spv", VK_SHADER_STAGE_VERTEX_BIT));
@@ -39,11 +40,15 @@ namespace Renderer {
         graphicsPipelineConfig.colorAttachmentFormats.push_back(m_Swapchain->GetFormat());
 
         m_GraphicsPipeline = std::make_unique<VulkanGraphicsPipeline>(m_Context, graphicsPipelineConfig);
+
+        CreateSyncObjects();
     }
 
     Renderer::~Renderer()
     {
         vkDeviceWaitIdle(m_Context->GetDevice());
+
+        DestroySyncObjects();
     }
 
     void Renderer::Resize(u32 width, u32 height)
@@ -53,9 +58,12 @@ namespace Renderer {
 
     void Renderer::Draw()
     {
-        auto imageAvailable = m_Swapchain->AcquireNextImage();
-        if (imageAvailable) {
-            m_Command->Record([&](const VkCommandBuffer& cmd) {
+        VK_CHECK(vkWaitForFences(m_Context->GetDevice(), 1, &m_Sync.at(m_FrameIndex).inFlight, VK_TRUE, std::numeric_limits<u64>::max()));
+
+        if (m_Swapchain->AcquireNextImage(m_Sync.at(m_FrameIndex).imageAvailable)) {
+            vkResetFences(m_Context->GetDevice(), 1, &m_Sync.at(m_FrameIndex).inFlight);
+
+            m_Commands.at(m_FrameIndex)->Record([&](const VkCommandBuffer& cmd) {
                 VkImageMemoryBarrier imageBarrier {
                     .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
                     .pNext = nullptr,
@@ -149,9 +157,50 @@ namespace Renderer {
                 );
             });
 
-            VkSemaphore renderFinished = m_Command->Submit({ *imageAvailable }, { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT });
+            vkWaitForFences(m_Context->GetDevice(), 1, &m_Sync.at(m_FrameIndex).inPresent, VK_TRUE, std::numeric_limits<u64>::max());
+            m_Commands.at(m_FrameIndex)->Submit(
+                { m_Sync.at(m_FrameIndex).imageAvailable },
+                { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT },
+                { m_Sync.at(m_FrameIndex).renderFinished },
+                m_Sync.at(m_FrameIndex).inFlight
+            );
 
-            m_Swapchain->Present(m_Context->GetPresentQueue(), renderFinished);
+            vkResetFences(m_Context->GetDevice(), 1, &m_Sync.at(m_FrameIndex).inPresent);
+            m_Swapchain->Present(m_Context->GetPresentQueue(), m_Sync.at(m_FrameIndex).renderFinished, m_Sync.at(m_FrameIndex).inPresent);
+
+            m_FrameIndex = (m_FrameIndex + 1) % s_FrameInFlight;
+        }
+    }
+
+    void Renderer::CreateSyncObjects()
+    {
+        static constexpr VkSemaphoreCreateInfo semaphoreInfo {
+            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+            .pNext = nullptr,
+            .flags = 0
+        };
+
+        static constexpr VkFenceCreateInfo fenceInfo {
+            .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+            .pNext = nullptr,
+            .flags = VK_FENCE_CREATE_SIGNALED_BIT
+        };
+
+        for (usize i = 0; i < s_FrameInFlight; ++i) {
+            vkCreateSemaphore(m_Context->GetDevice(), &semaphoreInfo, nullptr, &m_Sync.at(i).imageAvailable);
+            vkCreateSemaphore(m_Context->GetDevice(), &semaphoreInfo, nullptr, &m_Sync.at(i).renderFinished);
+            vkCreateFence(m_Context->GetDevice(), &fenceInfo, nullptr, &m_Sync.at(i).inFlight);
+            vkCreateFence(m_Context->GetDevice(), &fenceInfo, nullptr, &m_Sync.at(i).inPresent);
+        }
+    }
+
+    void Renderer::DestroySyncObjects()
+    {
+        for (usize i = 0; i < s_FrameInFlight; ++i) {
+            vkDestroyFence(m_Context->GetDevice(), m_Sync.at(i).inPresent, nullptr);
+            vkDestroyFence(m_Context->GetDevice(), m_Sync.at(i).inFlight, nullptr);
+            vkDestroySemaphore(m_Context->GetDevice(), m_Sync.at(i).renderFinished, nullptr);
+            vkDestroySemaphore(m_Context->GetDevice(), m_Sync.at(i).imageAvailable, nullptr);
         }
     }
 

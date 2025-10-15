@@ -23,33 +23,11 @@ namespace Renderer {
         };
 
         vkAllocateCommandBuffers(m_Context->GetDevice(), &allocateInfo, &m_CommandBuffer);
-
-        static constexpr VkSemaphoreCreateInfo semaphoreInfo {
-            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = 0
-        };
-
-        VK_CHECK(vkCreateSemaphore(m_Context->GetDevice(), &semaphoreInfo, nullptr, &m_InFlightSemaphore));
-
-        static constexpr VkFenceCreateInfo fenceInfo {
-            .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = VK_FENCE_CREATE_SIGNALED_BIT
-        };
-
-        VK_CHECK(vkCreateFence(m_Context->GetDevice(), &fenceInfo, nullptr, &m_InFlightFence));
     }
 
     VulkanCommandRecorder::~VulkanCommandRecorder()
     {
         vkQueueWaitIdle(m_QueueFamily.queue);
-
-        if (m_InFlightFence != VK_NULL_HANDLE)
-            vkDestroyFence(m_Context->GetDevice(), m_InFlightFence, nullptr);
-
-        if (m_InFlightSemaphore != VK_NULL_HANDLE)
-            vkDestroySemaphore(m_Context->GetDevice(), m_InFlightSemaphore, nullptr);
 
         if (m_CommandPool != VK_NULL_HANDLE)
             vkDestroyCommandPool(m_Context->GetDevice(), m_CommandPool, nullptr);
@@ -64,15 +42,12 @@ namespace Renderer {
             .pInheritanceInfo = nullptr
         };
 
-        VK_CHECK(vkWaitForFences(m_Context->GetDevice(), 1, &m_InFlightFence, VK_TRUE, std::numeric_limits<u64>::max()));
-        vkResetFences(m_Context->GetDevice(), 1, &m_InFlightFence);
-
         VK_CHECK(vkBeginCommandBuffer(m_CommandBuffer, &beginInfo));
         task(m_CommandBuffer);
         VK_CHECK(vkEndCommandBuffer(m_CommandBuffer));
     }
 
-    const VkSemaphore& VulkanCommandRecorder::Submit(const std::vector<VkSemaphore>& waitSemaphore, const std::vector<VkPipelineStageFlags>& waitStages)
+    void VulkanCommandRecorder::Submit(const std::vector<VkSemaphore>& waitSemaphore, const std::vector<VkPipelineStageFlags>& waitStages, const std::vector<VkSemaphore>& signalSemaphores, VkFence& signalFence)
     {
         VkSubmitInfo submitInfo {
             .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
@@ -82,13 +57,11 @@ namespace Renderer {
             .pWaitDstStageMask = waitStages.data(),
             .commandBufferCount = 1,
             .pCommandBuffers = &m_CommandBuffer,
-            .signalSemaphoreCount = 1,
-            .pSignalSemaphores = &m_InFlightSemaphore
+            .signalSemaphoreCount = static_cast<u32>(signalSemaphores.size()),
+            .pSignalSemaphores = signalSemaphores.data()
         };
 
-        VK_CHECK(vkQueueSubmit(m_QueueFamily.queue, 1, &submitInfo, m_InFlightFence));
-
-        return m_InFlightSemaphore;
+        VK_CHECK(vkQueueSubmit(m_QueueFamily.queue, 1, &submitInfo, signalFence));
     }
 
 }

@@ -8,54 +8,44 @@ namespace Renderer {
         : m_Context(context), m_Config(config)
     {
         CreateSwapchain();
-
-        static constexpr VkSemaphoreCreateInfo semaphoreInfo {
-            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = 0
-        };
-
-        VK_CHECK(vkCreateSemaphore(m_Context->GetDevice(), &semaphoreInfo, nullptr, &m_ImageAvailableSemaphore));
     }
 
     VulkanSwapchain::~VulkanSwapchain()
     {
-        if (m_ImageAvailableSemaphore != VK_NULL_HANDLE)
-            vkDestroySemaphore(m_Context->GetDevice(), m_ImageAvailableSemaphore, nullptr);
-
         CleanupSwapchainResources();
 
         if (m_Swapchain != VK_NULL_HANDLE)
             vkDestroySwapchainKHR(m_Context->GetDevice(), m_Swapchain, nullptr);
     }
 
-    std::expected<const VkSemaphore, VkResult> VulkanSwapchain::AcquireNextImage(u64 timeout)
+    bool VulkanSwapchain::AcquireNextImage(VkSemaphore& signalSemaphore, u64 timeout)
     {
-        if (m_Swapchain == VK_NULL_HANDLE)
-            return std::unexpected<VkResult>(VK_ERROR_INITIALIZATION_FAILED);
+        if (m_Swapchain == VK_NULL_HANDLE) {
+            LOG_ERROR("Swapchain not created");
+            return false;
+        }
 
-        // TODO: Will not work with multiple frame in flight (need multiple semaphores also)
-        vkWaitForFences(m_Context->GetDevice(), 1, &m_ImagePresentFences[m_CurrentImageIndex], VK_TRUE, std::numeric_limits<u64>::max());
+        VkResult result = vkAcquireNextImageKHR(m_Context->GetDevice(), m_Swapchain, timeout, signalSemaphore, VK_NULL_HANDLE, &m_CurrentImageIndex);
+        if (result != VK_SUCCESS) {
+            LOG_WARN("Failed to acquire swapchain image");
+            return false;
+        }
 
-        VkResult result = vkAcquireNextImageKHR(m_Context->GetDevice(), m_Swapchain, timeout, m_ImageAvailableSemaphore, VK_NULL_HANDLE, &m_CurrentImageIndex);
-        if (result != VK_SUCCESS)
-            return std::unexpected<VkResult>(result);
-
-        vkResetFences(m_Context->GetDevice(), 1, &m_ImagePresentFences[m_CurrentImageIndex]);
-
-        return m_ImageAvailableSemaphore;
+        return true;
     }
 
-    VkResult VulkanSwapchain::Present(const VkQueue& presentQueue, const VkSemaphore& waitSemaphore) const
+    bool VulkanSwapchain::Present(const VkQueue& presentQueue, const VkSemaphore& waitSemaphore, const VkFence& signalFence) const
     {
-        if (m_Swapchain == VK_NULL_HANDLE)
-            return VK_ERROR_INITIALIZATION_FAILED;
+        if (m_Swapchain == VK_NULL_HANDLE) {
+            LOG_ERROR("Swapchain not created");
+            return false;
+        }
 
         VkSwapchainPresentFenceInfoKHR presentFenceInfo {
             .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_FENCE_INFO_KHR,
             .pNext = nullptr,
             .swapchainCount = 1,
-            .pFences = &m_ImagePresentFences[m_CurrentImageIndex]
+            .pFences = &signalFence
         };
 
         VkPresentInfoKHR presentInfo {
@@ -69,7 +59,13 @@ namespace Renderer {
             .pResults = nullptr
         };
 
-        return vkQueuePresentKHR(presentQueue, &presentInfo);
+        VkResult result = vkQueuePresentKHR(presentQueue, &presentInfo);
+        if (result != VK_SUCCESS) {
+            LOG_WARN("Failed to present swapchain");
+            return false;
+        }
+
+        return true;
     }
 
     void VulkanSwapchain::Recreate(VkExtent2D extent)
@@ -168,7 +164,7 @@ namespace Renderer {
 
         m_ImageCount = support.surfaceCapabilities.minImageCount + 1;
         if (support.surfaceCapabilities.maxImageCount > 0)
-            m_ImageCount = std::clamp(m_ImageCount, m_ImageCount, support.surfaceCapabilities.maxImageCount);
+            m_ImageCount = std::min(m_ImageCount, support.surfaceCapabilities.maxImageCount);
 
         VkSwapchainCreateInfoKHR createInfo {
             .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
@@ -204,9 +200,8 @@ namespace Renderer {
         VkSwapchainKHR newSwapchain = VK_NULL_HANDLE;
         VK_CHECK(vkCreateSwapchainKHR(m_Context->GetDevice(), &createInfo, nullptr, &newSwapchain));
 
-        if (oldSwapchain != VK_NULL_HANDLE) {
+        if (oldSwapchain != VK_NULL_HANDLE)
             CleanupSwapchainResources();
-        }
 
         vkGetSwapchainImagesKHR(m_Context->GetDevice(), newSwapchain, &m_ImageCount, nullptr);
 
@@ -240,16 +235,6 @@ namespace Renderer {
             VK_CHECK(vkCreateImageView(m_Context->GetDevice(), &viewInfo, nullptr, &m_ImageViews.at(i)));
         }
 
-        static constexpr VkFenceCreateInfo fenceInfo {
-            .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = VK_FENCE_CREATE_SIGNALED_BIT
-        };
-
-        m_ImagePresentFences.resize(m_ImageCount);
-        for (auto& fence : m_ImagePresentFences)
-            VK_CHECK(vkCreateFence(m_Context->GetDevice(), &fenceInfo, nullptr, &fence));
-
         if (oldSwapchain != VK_NULL_HANDLE)
             vkDestroySwapchainKHR(m_Context->GetDevice(), oldSwapchain, nullptr);
 
@@ -258,11 +243,6 @@ namespace Renderer {
 
     void VulkanSwapchain::CleanupSwapchainResources()
     {
-        for (auto& fence : m_ImagePresentFences) {
-            if (fence != VK_NULL_HANDLE)
-                vkDestroyFence(m_Context->GetDevice(), fence, nullptr);
-        }
-
         for (auto& view : m_ImageViews) {
             if (view != VK_NULL_HANDLE)
                 vkDestroyImageView(m_Context->GetDevice(), view, nullptr);

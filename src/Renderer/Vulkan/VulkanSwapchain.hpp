@@ -39,8 +39,8 @@ namespace Renderer {
         inline const VkImage& GetCurrentImage() const { return m_Images[m_CurrentImageIndex]; }
         inline const VkImageView& GetCurrentImageView() const { return m_ImageViews[m_CurrentImageIndex]; }
 
-        std::expected<const VkSemaphore, VkResult> AcquireNextImage(u64 timeout = std::numeric_limits<u64>::max());
-        VkResult Present(const VkQueue& presentQueue, const VkSemaphore& waitSemaphore) const;
+        bool AcquireNextImage(VkSemaphore& signalSemaphore, u64 timeout = std::numeric_limits<u64>::max());
+        bool Present(const VkQueue& presentQueue, const VkSemaphore& waitSemaphore, const VkFence& signalFence) const;
 
         void Recreate(VkExtent2D extent);
 
@@ -66,8 +66,6 @@ namespace Renderer {
         Config m_Config;
 
         VkSwapchainKHR m_Swapchain { VK_NULL_HANDLE };
-        VkSemaphore m_ImageAvailableSemaphore;
-        std::vector<VkFence> m_ImagePresentFences;
 
         u32 m_CurrentImageIndex { 0 };
 
