@@ -8,6 +8,36 @@ namespace Renderer {
     Renderer::Renderer(const std::shared_ptr<Window>& window)
         : m_Window(window)
     {
+        m_RenderThread = std::thread(&Renderer::RenderThreadLoop, this);
+    }
+
+    Renderer::~Renderer()
+    {
+        m_Running = false;
+        m_QueueCondition.notify_one();
+
+        if (m_RenderThread.joinable())
+            m_RenderThread.join();
+    }
+
+    void Renderer::Resize(u32 width, u32 height)
+    {
+        m_Swapchain->Recreate(VkExtent2D { width, height });
+    }
+
+    void Renderer::Submit(std::vector<RenderPacket>& packets)
+    {
+        std::unique_lock<std::mutex> lock(m_QueueMutex);
+        m_StagingQueue.swap(packets);
+        lock.unlock();
+
+        m_QueueCondition.notify_one();
+    }
+
+    void Renderer::RenderThreadLoop()
+    {
+        LOG_DEBUG("Render thread running");
+
         m_Context = std::make_shared<VulkanContext>(*m_Window);
 
         VulkanSwapchain::Config swapchainConfig {
@@ -42,21 +72,35 @@ namespace Renderer {
         m_GraphicsPipeline = std::make_unique<VulkanGraphicsPipeline>(m_Context, graphicsPipelineConfig);
 
         CreateSyncObjects();
-    }
 
-    Renderer::~Renderer()
-    {
+        while (m_Running) {
+            std::unique_lock<std::mutex> lock(m_QueueMutex);
+            m_QueueCondition.wait(lock, [this]{
+                return !m_StagingQueue.empty() || !m_Running;
+            });
+
+            if (!m_Running && m_StagingQueue.empty())
+                break;
+
+            m_RenderQueue.swap(m_StagingQueue);
+            lock.unlock();
+
+            ProcessFrame();
+
+            m_RenderQueue.clear();
+        }
+
         vkDeviceWaitIdle(m_Context->GetDevice());
 
         DestroySyncObjects();
+        m_GraphicsPipeline.reset();
+        for (auto& command : m_Commands)
+            command.reset();
+        m_Swapchain.reset();
+        m_Context.reset();
     }
 
-    void Renderer::Resize(u32 width, u32 height)
-    {
-        m_Swapchain->Recreate(VkExtent2D { width, height });
-    }
-
-    void Renderer::Draw()
+    void Renderer::ProcessFrame()
     {
         VK_CHECK(vkWaitForFences(m_Context->GetDevice(), 1, &m_Sync.at(m_FrameIndex).inFlight, VK_TRUE, std::numeric_limits<u64>::max()));
 

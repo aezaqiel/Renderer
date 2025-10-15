@@ -1,6 +1,9 @@
 #pragma once
 
 #include <array>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
 
 #include "Core/Window.hpp"
 #include "Vulkan/VulkanContext.hpp"
@@ -13,12 +16,16 @@ namespace Renderer {
     class Renderer
     {
     public:
+        struct RenderPacket
+        {
+        };
+
+    public:
         Renderer(const std::shared_ptr<Window>& window);
         ~Renderer();
 
         void Resize(u32 width, u32 height);
-
-        void Draw();
+        void Submit(std::vector<RenderPacket>& packets);
 
     private:
         struct SyncData
@@ -30,12 +37,20 @@ namespace Renderer {
         };
 
     private:
+        void RenderThreadLoop();
+        void ProcessFrame();
+
         void CreateSyncObjects();
         void DestroySyncObjects();
 
     private:
-        inline static constexpr usize s_FrameInFlight { 2 };
-        usize m_FrameIndex { 0 };
+        std::thread m_RenderThread;
+        std::atomic<bool> m_Running { true };
+
+        std::mutex m_QueueMutex;
+        std::condition_variable m_QueueCondition;
+        std::vector<RenderPacket> m_StagingQueue;
+        std::vector<RenderPacket> m_RenderQueue;
 
         std::shared_ptr<Window> m_Window;
 
@@ -44,6 +59,9 @@ namespace Renderer {
 
         std::unique_ptr<VulkanGraphicsPipeline> m_GraphicsPipeline;
 
+        inline static constexpr usize s_FrameInFlight { 2 };
+
+        usize m_FrameIndex { 0 };
         std::array<std::unique_ptr<VulkanCommandRecorder>, s_FrameInFlight> m_Commands;
         std::array<SyncData, s_FrameInFlight> m_Sync;
     };

@@ -25,12 +25,14 @@ namespace Renderer {
 
     void Application::Run()
     {
+        static std::vector<Renderer::RenderPacket> renderPackets;
+
         while (m_Running) {
             Window::PollEvents();
             ProcessEvents();
 
             if (!m_Minimized) {
-                m_Renderer->Draw();
+                m_Renderer->Submit(renderPackets);
             }
         }
     }
