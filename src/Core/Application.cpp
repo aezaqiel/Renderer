@@ -25,13 +25,12 @@ namespace Renderer {
 
     void Application::Run()
     {
-        static std::vector<Renderer::RenderPacket> renderPackets;
-
         while (m_Running) {
             Window::PollEvents();
             ProcessEvents();
 
             if (!m_Minimized) {
+                std::vector<Renderer::RenderPacket> renderPackets(1, {});
                 m_Renderer->Submit(renderPackets);
             }
         }
@@ -53,7 +52,7 @@ namespace Renderer {
             });
 
             dispatcher.Dispatch<WindowResizedEvent>([&](const WindowResizedEvent& e) -> bool {
-                m_Renderer->Resize(e.width, e.height);
+                m_Renderer->RequestResize(e.width, e.height);
                 return false;
             });
 

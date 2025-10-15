@@ -70,8 +70,6 @@ namespace Renderer {
 
     void VulkanSwapchain::Recreate(VkExtent2D extent)
     {
-        vkDeviceWaitIdle(m_Context->GetDevice());
-
         m_Config.extent = extent;
 
         VkSwapchainKHR oldSwapchain = m_Swapchain;

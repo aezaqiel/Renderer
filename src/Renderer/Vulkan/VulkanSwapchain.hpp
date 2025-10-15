@@ -32,8 +32,8 @@ namespace Renderer {
         inline const VkPresentModeKHR GetPresentMode() const { return m_PresentMode; }
 
         inline const VkExtent2D GetExtent() const { return m_Extent; }
-        inline u32 GeWidth() const { return m_Extent.width; }
-        inline u32 GeHeight() const { return m_Extent.height; }
+        inline u32 GetWidth() const { return m_Extent.width; }
+        inline u32 GetHeight() const { return m_Extent.height; }
 
         inline u32 GetCurrentImageIndex() const { return m_CurrentImageIndex; }
         inline const VkImage& GetCurrentImage() const { return m_Images[m_CurrentImageIndex]; }

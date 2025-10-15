@@ -24,7 +24,7 @@ namespace Renderer {
         Renderer(const std::shared_ptr<Window>& window);
         ~Renderer();
 
-        void Resize(u32 width, u32 height);
+        void RequestResize(u32 width, u32 height);
         void Submit(std::vector<RenderPacket>& packets);
 
     private:
@@ -36,21 +36,33 @@ namespace Renderer {
             VkFence inPresent { VK_NULL_HANDLE };
         };
 
+        struct ResizeRequest
+        {
+            bool pending { false };
+            u32 width { 0 };
+            u32 height { 0 };
+        };
+
     private:
         void RenderThreadLoop();
         void ProcessFrame();
 
-        void CreateSyncObjects();
-        void DestroySyncObjects();
+        void CreateResources();
+        void DestroyResources();
+
+        void HandleResize();
 
     private:
-        std::thread m_RenderThread;
         std::atomic<bool> m_Running { true };
 
-        std::mutex m_QueueMutex;
+        std::thread m_RenderThread;
+        std::mutex m_RenderMutex;
+
         std::condition_variable m_QueueCondition;
         std::vector<RenderPacket> m_StagingQueue;
         std::vector<RenderPacket> m_RenderQueue;
+
+        ResizeRequest m_ResizeRequest;
 
         std::shared_ptr<Window> m_Window;
 
