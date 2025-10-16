@@ -207,8 +207,8 @@ namespace Renderer {
             m_Commands.at(i) = CreateScope<VulkanCommandRecorder>(m_Context, m_Context->GetGraphicsDeviceQueue());
 
         VulkanGraphicsPipeline::Config graphicsPipelineConfig;
-        graphicsPipelineConfig.shaders.push_back(CreateRef<VulkanShader>(m_Context, "shaders/triangle.vert.spv", VK_SHADER_STAGE_VERTEX_BIT));
-        graphicsPipelineConfig.shaders.push_back(CreateRef<VulkanShader>(m_Context, "shaders/triangle.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT));
+        graphicsPipelineConfig.shaders.push_back(CreateRef<VulkanShader>(m_Context, "../shaders/triangle.vert.spv", VK_SHADER_STAGE_VERTEX_BIT));
+        graphicsPipelineConfig.shaders.push_back(CreateRef<VulkanShader>(m_Context, "../shaders/triangle.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT));
         graphicsPipelineConfig.frontFace = VK_FRONT_FACE_CLOCKWISE;
         graphicsPipelineConfig.depthTestEnabled = false;
         graphicsPipelineConfig.depthWriteEnabled = false;
