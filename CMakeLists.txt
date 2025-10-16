@@ -182,7 +182,7 @@ function(compile_shaders_target target_name)
     )
 endfunction()
 
-compile_shaders_target(renderer_shaders)
+compile_shaders_target(compile_shaders)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
