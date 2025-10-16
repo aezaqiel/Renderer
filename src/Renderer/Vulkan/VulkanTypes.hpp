@@ -2,6 +2,7 @@
 
 #include <volk.h>
 
+#include "Core/Types.hpp"
 #include "Core/Logger.hpp"
 
 namespace Renderer {

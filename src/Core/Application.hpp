@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Types.hpp"
 #include "Events.hpp"
 #include "Window.hpp"
 #include "Renderer/Renderer.hpp"
@@ -26,9 +27,9 @@ namespace Renderer {
         bool m_Running { true };
         bool m_Minimized { false };
 
-        std::unique_ptr<EventQueue> m_EventQueue;
-        std::shared_ptr<Window> m_Window;
-        std::unique_ptr<Renderer> m_Renderer;
+        Scope<EventQueue> m_EventQueue;
+        Ref<Window> m_Window;
+        Scope<Renderer> m_Renderer;
     };
 
 }

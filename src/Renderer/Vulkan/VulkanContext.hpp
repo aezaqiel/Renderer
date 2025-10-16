@@ -3,9 +3,8 @@
 #include <optional>
 #include <set>
 
-#include "Core/Types.hpp"
-#include "Core/Window.hpp"
 #include "VulkanTypes.hpp"
+#include "Core/Window.hpp"
 
 namespace Renderer {
 
@@ -190,7 +189,6 @@ namespace Renderer {
         VkPhysicalDevice m_PhysicalDevice { VK_NULL_HANDLE };
         VkPhysicalDeviceProperties m_PhysicalDeviceProperties;
 
-        // QueueFamilyIndices m_QueueIndices;
         DeviceQueue m_GraphicsQueue;
         DeviceQueue m_ComputeQueue;
         DeviceQueue m_TransferQueue;

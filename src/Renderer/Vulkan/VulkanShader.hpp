@@ -10,7 +10,7 @@ namespace Renderer {
     class VulkanShader
     {
     public:
-        VulkanShader(const std::shared_ptr<VulkanContext>& context, const std::string& filepath, VkShaderStageFlagBits stage);
+        VulkanShader(const Ref<VulkanContext>& context, const std::string& filepath, VkShaderStageFlagBits stage);
         ~VulkanShader();
 
         inline const VkShaderModule& GetModule() const { return m_Module; }
@@ -20,7 +20,7 @@ namespace Renderer {
         static std::vector<u8> ReadFile(const std::string& filepath);
 
     private:
-        std::shared_ptr<VulkanContext> m_Context;
+        Ref<VulkanContext> m_Context;
 
         VkShaderModule m_Module { VK_NULL_HANDLE };
         VkShaderStageFlagBits m_Stage { VK_SHADER_STAGE_ALL };

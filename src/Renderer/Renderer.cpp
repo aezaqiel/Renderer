@@ -5,7 +5,7 @@
 
 namespace Renderer {
 
-    Renderer::Renderer(const std::shared_ptr<Window>& window)
+    Renderer::Renderer(const Ref<Window>& window)
         : m_Window(window)
     {
         m_RenderThread = std::thread(&Renderer::RenderThreadLoop, this);
@@ -193,7 +193,7 @@ namespace Renderer {
 
     void Renderer::CreateResources()
     {
-        m_Context = std::make_shared<VulkanContext>(*m_Window);
+        m_Context = CreateRef<VulkanContext>(*m_Window);
 
         VulkanSwapchain::Config swapchainConfig {
             .extent = {
@@ -201,14 +201,14 @@ namespace Renderer {
                 .height = m_Window->Height()
             }
         };
-        m_Swapchain = std::make_unique<VulkanSwapchain>(m_Context, swapchainConfig);
+        m_Swapchain = CreateScope<VulkanSwapchain>(m_Context, swapchainConfig);
 
         for (usize i = 0; i < s_FrameInFlight; ++i)
-            m_Commands.at(i) = std::make_unique<VulkanCommandRecorder>(m_Context, m_Context->GetGraphicsDeviceQueue());
+            m_Commands.at(i) = CreateScope<VulkanCommandRecorder>(m_Context, m_Context->GetGraphicsDeviceQueue());
 
         VulkanGraphicsPipeline::Config graphicsPipelineConfig;
-        graphicsPipelineConfig.shaders.push_back(std::make_shared<VulkanShader>(m_Context, "shaders/triangle.vert.spv", VK_SHADER_STAGE_VERTEX_BIT));
-        graphicsPipelineConfig.shaders.push_back(std::make_shared<VulkanShader>(m_Context, "shaders/triangle.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT));
+        graphicsPipelineConfig.shaders.push_back(CreateRef<VulkanShader>(m_Context, "shaders/triangle.vert.spv", VK_SHADER_STAGE_VERTEX_BIT));
+        graphicsPipelineConfig.shaders.push_back(CreateRef<VulkanShader>(m_Context, "shaders/triangle.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT));
         graphicsPipelineConfig.frontFace = VK_FRONT_FACE_CLOCKWISE;
         graphicsPipelineConfig.depthTestEnabled = false;
         graphicsPipelineConfig.depthWriteEnabled = false;
@@ -224,7 +224,7 @@ namespace Renderer {
         });
         graphicsPipelineConfig.colorAttachmentFormats.push_back(m_Swapchain->GetFormat());
 
-        m_GraphicsPipeline = std::make_unique<VulkanGraphicsPipeline>(m_Context, graphicsPipelineConfig);
+        m_GraphicsPipeline = CreateScope<VulkanGraphicsPipeline>(m_Context, graphicsPipelineConfig);
 
         static constexpr VkSemaphoreCreateInfo semaphoreInfo {
             .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
@@ -280,7 +280,6 @@ namespace Renderer {
             vkWaitForFences(m_Context->GetDevice(), 1, &m_Sync.at(i).inFlight, VK_TRUE, std::numeric_limits<u64>::max());
             vkWaitForFences(m_Context->GetDevice(), 1, &m_Sync.at(i).inPresent, VK_TRUE, std::numeric_limits<u64>::max());
         }
-        // vkDeviceWaitIdle(m_Context->GetDevice());
 
         m_Swapchain->Recreate(VkExtent2D{ resize.width, resize.height });
     }

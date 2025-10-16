@@ -20,7 +20,7 @@ namespace Renderer {
         };
 
     public:
-        VulkanSwapchain(const std::shared_ptr<VulkanContext>& context, const Config& config);
+        VulkanSwapchain(const Ref<VulkanContext>& context, const Config& config);
         ~VulkanSwapchain();
 
         inline const VkSwapchainKHR& GetSwapchain() const { return m_Swapchain; }
@@ -62,7 +62,7 @@ namespace Renderer {
         void CleanupSwapchainResources();
 
     private:
-        std::shared_ptr<VulkanContext> m_Context;
+        Ref<VulkanContext> m_Context;
         Config m_Config;
 
         VkSwapchainKHR m_Swapchain { VK_NULL_HANDLE };

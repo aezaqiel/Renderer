@@ -6,16 +6,16 @@ namespace Renderer {
     {
         s_Instance = this;
 
-        m_EventQueue = std::make_unique<EventQueue>();
+        m_EventQueue = CreateScope<EventQueue>();
 
-        m_Window = std::make_shared<Window>(Window::Config{
+        m_Window = CreateRef<Window>(Window::Config{
             .width = 1280,
             .height = 720,
             .title = "Renderer"
         });
         m_Window->BindEventQueue(m_EventQueue.get());
 
-        m_Renderer = std::make_unique<Renderer>(m_Window);
+        m_Renderer = CreateScope<Renderer>(m_Window);
     }
 
     Application::~Application()

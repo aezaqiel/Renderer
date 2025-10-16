@@ -4,7 +4,7 @@
 
 namespace Renderer {
 
-    VulkanSwapchain::VulkanSwapchain(const std::shared_ptr<VulkanContext>& context, const Config& config)
+    VulkanSwapchain::VulkanSwapchain(const Ref<VulkanContext>& context, const Config& config)
         : m_Context(context), m_Config(config)
     {
         CreateSwapchain();

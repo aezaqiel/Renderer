@@ -4,7 +4,7 @@
 
 namespace Renderer {
 
-    VulkanShader::VulkanShader(const std::shared_ptr<VulkanContext>& context, const std::string& filepath, VkShaderStageFlagBits stage)
+    VulkanShader::VulkanShader(const Ref<VulkanContext>& context, const std::string& filepath, VkShaderStageFlagBits stage)
         : m_Context(context), m_Stage(stage)
     {
         std::vector<u8> code = ReadFile(filepath);

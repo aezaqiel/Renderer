@@ -2,7 +2,7 @@
 
 namespace Renderer {
 
-    VulkanGraphicsPipeline::VulkanGraphicsPipeline(const std::shared_ptr<VulkanContext>& context, const Config& cfg)
+    VulkanGraphicsPipeline::VulkanGraphicsPipeline(const Ref<VulkanContext>& context, const Config& cfg)
         : m_Context(context)
     {
         VkPipelineLayoutCreateInfo layoutInfo {

@@ -2,7 +2,7 @@
 
 namespace Renderer {
 
-    VulkanCommandRecorder::VulkanCommandRecorder(const std::shared_ptr<VulkanContext>& context, const DeviceQueue& queueFamily)
+    VulkanCommandRecorder::VulkanCommandRecorder(const Ref<VulkanContext>& context, const DeviceQueue& queueFamily)
         : m_Context(context), m_QueueFamily(queueFamily)
     {
         VkCommandPoolCreateInfo poolInfo {

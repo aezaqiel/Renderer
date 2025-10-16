@@ -11,7 +11,7 @@ namespace Renderer {
     public:
         struct Config
         {
-            std::vector<std::shared_ptr<VulkanShader>> shaders;
+            std::vector<Ref<VulkanShader>> shaders;
 
             std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
             std::vector<VkPushConstantRange> pushConstantRanges;
@@ -40,7 +40,7 @@ namespace Renderer {
         };
 
     public:
-        VulkanGraphicsPipeline(const std::shared_ptr<VulkanContext>& context, const Config& cfg);
+        VulkanGraphicsPipeline(const Ref<VulkanContext>& context, const Config& cfg);
         ~VulkanGraphicsPipeline();
 
         inline const VkPipelineLayout& GetLayout() const { return m_Layout; }
@@ -51,7 +51,7 @@ namespace Renderer {
         void SetScissor(const VkCommandBuffer& cmd, const VkRect2D& scissor);
 
     private:
-        std::shared_ptr<VulkanContext> m_Context;
+        Ref<VulkanContext> m_Context;
 
         VkPipelineLayout m_Layout { VK_NULL_HANDLE };
         VkPipeline m_Pipeline { VK_NULL_HANDLE };

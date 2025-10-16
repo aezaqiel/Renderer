@@ -21,7 +21,7 @@ namespace Renderer {
         };
 
     public:
-        Renderer(const std::shared_ptr<Window>& window);
+        Renderer(const Ref<Window>& window);
         ~Renderer();
 
         void RequestResize(u32 width, u32 height);
@@ -64,17 +64,17 @@ namespace Renderer {
 
         ResizeRequest m_ResizeRequest;
 
-        std::shared_ptr<Window> m_Window;
+        Ref<Window> m_Window;
+        
+        Ref<VulkanContext> m_Context;
+        Scope<VulkanSwapchain> m_Swapchain;
 
-        std::shared_ptr<VulkanContext> m_Context;
-        std::unique_ptr<VulkanSwapchain> m_Swapchain;
-
-        std::unique_ptr<VulkanGraphicsPipeline> m_GraphicsPipeline;
+        Scope<VulkanGraphicsPipeline> m_GraphicsPipeline;
 
         inline static constexpr usize s_FrameInFlight { 2 };
 
         usize m_FrameIndex { 0 };
-        std::array<std::unique_ptr<VulkanCommandRecorder>, s_FrameInFlight> m_Commands;
+        std::array<Scope<VulkanCommandRecorder>, s_FrameInFlight> m_Commands;
         std::array<SyncData, s_FrameInFlight> m_Sync;
     };
 

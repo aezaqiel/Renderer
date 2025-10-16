@@ -174,7 +174,7 @@ namespace Renderer {
             std::vector<Event> polled;
             polled.swap(m_Queue);
 
-            return std::move(polled);
+            return polled;
         }
 
     private:
