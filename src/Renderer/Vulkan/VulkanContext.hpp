@@ -52,8 +52,9 @@ namespace Renderer {
         inline u32 GetGraphicsQueueIndex() const
         {
             u32 index = m_GraphicsQueue.index;
-            if (index == std::numeric_limits<u32>::max())
-                LOG_ERROR("Graphics queue index not set");
+            if (index == std::numeric_limits<u32>::max()) {
+                LOG_ERROR("Graphics queue index not set")
+            }
             return index;
         }
 
@@ -70,8 +71,9 @@ namespace Renderer {
         inline u32 GetComputeQueueIndex() const
         {
             u32 index = m_ComputeQueue.index;
-            if (index == std::numeric_limits<u32>::max())
-                LOG_ERROR("Compute queue index not set");
+            if (index == std::numeric_limits<u32>::max()) {
+                LOG_ERROR("Compute queue index not set")
+            }
             return index;
         }
 
@@ -88,8 +90,9 @@ namespace Renderer {
         inline u32 GetTransferQueueIndex() const
         {
             u32 index = m_TransferQueue.index;
-            if (index == std::numeric_limits<u32>::max())
-                LOG_ERROR("Transfer queue index not set");
+            if (index == std::numeric_limits<u32>::max()) {
+                LOG_ERROR("Transfer queue index not set")
+            }
             return index;
         }
 
@@ -106,8 +109,9 @@ namespace Renderer {
         inline u32 GetPresentQueueIndex() const
         {
             u32 index = m_PresentQueue.index;
-            if (index == std::numeric_limits<u32>::max())
-                LOG_ERROR("Present queue index not set");
+            if (index == std::numeric_limits<u32>::max()) {
+                LOG_ERROR("Present queue index not set")
+            }
             return index;
         }
 

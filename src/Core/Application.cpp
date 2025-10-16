@@ -41,7 +41,7 @@ namespace Renderer {
         for (auto& event : m_EventQueue->Poll()) {
             EventDispatcher dispatcher(event);
 
-            dispatcher.Dispatch<WindowClosedEvent>([&](const WindowClosedEvent& e) -> bool {
+            dispatcher.Dispatch<WindowClosedEvent>([&](const WindowClosedEvent&) -> bool {
                 m_Running = false;
                 return true;
             });

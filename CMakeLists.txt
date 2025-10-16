@@ -195,11 +195,11 @@ install(TARGETS ${PROJECT_NAME}
     BUNDLE DESTINATION bin
 )
 
-# if(MSVC)
-#     target_compile_options(${PROJECT_NAME} PRIVATE /W4 /WX)
-# else()
-#     target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic -Werror)
-# endif()
+if(MSVC)
+    target_compile_options(${PROJECT_NAME} PRIVATE /W4 /WX)
+else()
+    target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic -Werror)
+endif()
 
 message(STATUS "Renderer Configuration:")
 message(STATUS "  Platform: ${CMAKE_SYSTEM_NAME}")

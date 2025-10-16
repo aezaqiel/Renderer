@@ -18,8 +18,9 @@ namespace Renderer {
         };
 
         VK_CHECK(vkCreateShaderModule(m_Context->GetDevice(), &createInfo, nullptr, &m_Module));
-        if (m_Module != VK_NULL_HANDLE)
-            LOG_INFO("Loaded shader file {}", filepath);
+        if (m_Module != VK_NULL_HANDLE) {
+            LOG_INFO("Loaded shader file {}", filepath)
+        }
     }
 
     VulkanShader::~VulkanShader()
@@ -35,7 +36,7 @@ namespace Renderer {
         std::ifstream file(filepath, std::ios::binary | std::ios::ate);
 
         if (!file.is_open()) {
-            LOG_ERROR("Failed to open file {}", filepath);
+            LOG_ERROR("Failed to open file {}", filepath)
             return data;
         }
 

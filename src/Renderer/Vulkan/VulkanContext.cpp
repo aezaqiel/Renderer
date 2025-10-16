@@ -17,7 +17,7 @@ namespace Renderer {
         m_Surface = window.CreateVulkanSurface(m_Instance);
 
         PickPhysicalDevice();
-        LOG_INFO("Physical device: {}", m_PhysicalDeviceProperties.deviceName);
+        LOG_INFO("Physical device: {}", m_PhysicalDeviceProperties.deviceName)
 
         auto indices = FindQueueFamilies(m_PhysicalDevice, m_Surface);
         m_GraphicsQueue.index = indices.Graphics();
@@ -25,10 +25,10 @@ namespace Renderer {
         m_TransferQueue.index = indices.Transfer();
         m_PresentQueue.index = indices.Present();
 
-        LOG_INFO("Graphics queue family index: {}", m_GraphicsQueue.index);
-        LOG_INFO("Compute queue family index: {}", m_ComputeQueue.index);
-        LOG_INFO("Transfer queue family index: {}", m_TransferQueue.index);
-        LOG_INFO("Present queue family index: {}", m_PresentQueue.index);
+        LOG_INFO("Graphics queue family index: {}", m_GraphicsQueue.index)
+        LOG_INFO("Compute queue family index: {}", m_ComputeQueue.index)
+        LOG_INFO("Transfer queue family index: {}", m_TransferQueue.index)
+        LOG_INFO("Present queue family index: {}", m_PresentQueue.index)
 
         CreateDevice();
     }
@@ -55,7 +55,7 @@ namespace Renderer {
                         return false;
                 }
 
-                LOG_ERROR("Requested instance layer {} not available", layer);
+                LOG_ERROR("Requested instance layer {} not available", layer)
                 return true;
             });
 
@@ -74,7 +74,7 @@ namespace Renderer {
                         return false;
                 }
 
-                LOG_ERROR("Requested instance extension {} not available", extension);
+                LOG_ERROR("Requested instance extension {} not available", extension)
                 return true;
             });
 
@@ -89,7 +89,7 @@ namespace Renderer {
             VK_API_VERSION_MAJOR(apiVersion),
             VK_API_VERSION_MINOR(apiVersion),
             VK_API_VERSION_PATCH(apiVersion)
-        );
+        )
 
         VkApplicationInfo info {
             .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
@@ -115,13 +115,17 @@ namespace Renderer {
         VK_CHECK(vkCreateInstance(&createInfo, nullptr, &m_Instance));
         volkLoadInstance(m_Instance);
 
-        LOG_INFO("Instance layers:");
-        for (const auto& layer : s_InstanceLayers)
-            LOG_INFO(" - {}", layer);
+#ifndef NDEBUG
+        LOG_INFO("Instance layers:")
+        for (const auto& layer : s_InstanceLayers) {
+            LOG_INFO(" - {}", layer)
+        }
 
-        LOG_INFO("Instance extensions:");
-        for (const auto& extension : s_InstanceExtensions)
-            LOG_INFO(" - {}", extension);
+        LOG_INFO("Instance extensions:")
+        for (const auto& extension : s_InstanceExtensions) {
+            LOG_INFO(" - {}", extension)
+        }
+#endif
     }
 
     VulkanContext::QueueFamilyIndices VulkanContext::FindQueueFamilies(const VkPhysicalDevice& device, const VkSurfaceKHR& surface)
@@ -170,17 +174,14 @@ namespace Renderer {
         }
 
         if (!indices.HasPresent()) {
-            index = 0;
-            for (const auto& queue : families) {
-                VkBool32 presentSupport = VK_FALSE;
-                vkGetPhysicalDeviceSurfaceSupportKHR(device, index, surface, &presentSupport);
+            for (usize i = 0; i < families.size(); ++i) {
+                VkBool32 presentSuport = VK_FALSE;
+                vkGetPhysicalDeviceSurfaceSupportKHR(device, static_cast<u32>(i), surface, &presentSuport);
 
-                if (presentSupport == VK_TRUE) {
-                    indices.present = index;
+                if (presentSuport == VK_TRUE) {
+                    indices.present = static_cast<u32>(i);
                     break;
                 }
-
-                index += 1;
             }
         }
 
@@ -222,7 +223,7 @@ namespace Renderer {
         vkEnumeratePhysicalDevices(m_Instance, &deviceCount, nullptr);
 
         if (deviceCount == 0) {
-            LOG_FATAL("No supported physical device found");
+            LOG_FATAL("No supported physical device found")
             return;
         }
 
@@ -230,7 +231,7 @@ namespace Renderer {
         vkEnumeratePhysicalDevices(m_Instance, &deviceCount, availableDevices.data());
 
         for (const auto& device : availableDevices) {
-            VkPhysicalDeviceProperties props;
+            VkPhysicalDeviceProperties props{};
             vkGetPhysicalDeviceProperties(device, &props);
 
             if (props.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
@@ -245,12 +246,13 @@ namespace Renderer {
         }
 
         if (m_PhysicalDevice == VK_NULL_HANDLE) {
-            LOG_WARN("Optimal physical device not found. Using fallback selection");
+            LOG_WARN("Optimal physical device not found. Using fallback selection")
 
             m_PhysicalDevice = availableDevices.at(0);
 
-            VkPhysicalDeviceProperties props;
+            VkPhysicalDeviceProperties props{};
             vkGetPhysicalDeviceProperties(m_PhysicalDevice, &m_PhysicalDeviceProperties);
+            m_PhysicalDeviceProperties = props;
         }
     }
 
@@ -268,7 +270,7 @@ namespace Renderer {
                         return false;
                 }
 
-                LOG_ERROR("Requested device extension {} not available", extension);
+                LOG_ERROR("Requested device extension {} not available", extension)
                 return true;
             });
 
@@ -330,9 +332,12 @@ namespace Renderer {
         vkGetDeviceQueue(m_Device, m_TransferQueue.index, 0, &m_TransferQueue.queue);
         vkGetDeviceQueue(m_Device, m_PresentQueue.index, 0, &m_PresentQueue.queue);
 
-        LOG_INFO("Device extensions:");
-        for (const auto& extension : s_DeviceExtensions)
-            LOG_INFO(" - {}", extension);
+#ifndef NDEBUG
+        LOG_INFO("Device extensions:")
+        for (const auto& extension : s_DeviceExtensions) {
+            LOG_INFO(" - {}", extension)
+        }
+#endif
     }
 
 }

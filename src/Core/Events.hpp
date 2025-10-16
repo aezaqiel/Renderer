@@ -23,7 +23,7 @@ namespace Renderer {
         u32 height;
 
         constexpr WindowResizedEvent(u32 width, u32 height) noexcept
-            : height(height), width(width) {}
+            : width(width), height(height) {}
     };
 
     struct WindowMovedEvent final : public BaseEvent

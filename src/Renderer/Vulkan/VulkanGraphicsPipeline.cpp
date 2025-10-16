@@ -95,21 +95,22 @@ namespace Renderer {
             .depthWriteEnable = static_cast<VkBool32>(cfg.depthWriteEnabled),
             .depthCompareOp = cfg.depthCompareOp,
             .depthBoundsTestEnable = VK_FALSE,
-            .stencilTestEnable = VK_FALSE
+            .stencilTestEnable = VK_FALSE,
+            .front = {},
+            .back = {},
+            .minDepthBounds = 0.0f,
+            .maxDepthBounds = 1.0f
         };
 
         VkPipelineColorBlendStateCreateInfo colorBlendState {
-            colorBlendState.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
-            colorBlendState.pNext = nullptr,
-            colorBlendState.flags = 0,
-            colorBlendState.logicOpEnable = VK_FALSE,
-            colorBlendState.logicOp = VK_LOGIC_OP_COPY,
-            colorBlendState.attachmentCount = static_cast<u32>(cfg.colorBlendAttachments.size()),
-            colorBlendState.pAttachments = cfg.colorBlendAttachments.data(),
-            colorBlendState.blendConstants[0] = 0.0f,
-            colorBlendState.blendConstants[1] = 0.0f,
-            colorBlendState.blendConstants[2] = 0.0f,
-            colorBlendState.blendConstants[3] = 0.0f
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
+            .pNext = nullptr,
+            .flags = 0,
+            .logicOpEnable = VK_FALSE,
+            .logicOp = VK_LOGIC_OP_COPY,
+            .attachmentCount = static_cast<u32>(cfg.colorBlendAttachments.size()),
+            .pAttachments = cfg.colorBlendAttachments.data(),
+            .blendConstants = { 0.0f, 0.0f, 0.0f, 0.0f }
         };
 
         std::vector<VkDynamicState> dynamicStates {
@@ -128,6 +129,7 @@ namespace Renderer {
         VkPipelineRenderingCreateInfo renderingInfo {
             .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
             .pNext = nullptr,
+            .viewMask = 0,
             .colorAttachmentCount = static_cast<u32>(cfg.colorAttachmentFormats.size()),
             .pColorAttachmentFormats = cfg.colorAttachmentFormats.data(),
             .depthAttachmentFormat = cfg.depthAttachmentFormat,

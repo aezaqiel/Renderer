@@ -11,7 +11,11 @@ namespace Renderer {
     Window::Window(const Config& config)
     {
         glfwSetErrorCallback([](i32 code, const char* desc) {
-            LOG_ERROR("GLFW Error {}: {}", code, desc);
+            LOG_ERROR("GLFW Error {}: {}", code, desc)
+#ifdef NDEBUG
+            (void)code;
+            (void)desc;
+#endif
         });
 
         glfwInit();
@@ -60,7 +64,7 @@ namespace Renderer {
             data.eventQueue->Push(WindowFocusEvent(static_cast<bool>(focused)));
         });
 
-        glfwSetKeyCallback(m_Window, [](GLFWwindow* window, i32 key, i32 scancode, i32 action, i32 mods) {
+        glfwSetKeyCallback(m_Window, [](GLFWwindow* window, i32 key, i32, i32 action, i32) {
             WindowData& data = *reinterpret_cast<WindowData*>(glfwGetWindowUserPointer(window));
 
             switch (action) {
@@ -73,8 +77,9 @@ namespace Renderer {
                 case GLFW_REPEAT: {
                     data.eventQueue->Push(KeyPressedEvent(static_cast<KeyCode>(key), true));
                 } break;
-                default:
-                    LOG_WARN("Unknown key action {}", action);
+                default: {
+                    LOG_WARN("Unknown key action {}", action)
+                }
             }
         });
 
@@ -83,7 +88,7 @@ namespace Renderer {
             data.eventQueue->Push(KeyTypedEvent(static_cast<KeyCode>(code)));
         });
 
-        glfwSetMouseButtonCallback(m_Window, [](GLFWwindow* window, i32 button, i32 action, i32 mods) {
+        glfwSetMouseButtonCallback(m_Window, [](GLFWwindow* window, i32 button, i32 action, i32) {
             WindowData& data = *reinterpret_cast<WindowData*>(glfwGetWindowUserPointer(window));
 
             switch (action) {
@@ -93,8 +98,9 @@ namespace Renderer {
                 case GLFW_RELEASE: {
                     data.eventQueue->Push(MouseButtonReleasedEvent(static_cast<MouseButton>(button)));
                 } break;
-                default:
-                    LOG_WARN("Unknown mouse button action {}", action);
+                default: {
+                    LOG_WARN("Unknown mouse button action {}", action)
+                }
             }
         });
 
@@ -108,7 +114,7 @@ namespace Renderer {
             data.eventQueue->Push(MouseScrolledEvent(static_cast<f32>(x), static_cast<f32>(y)));
         });
 
-        LOG_INFO("Created window [{}] ({}, {})", glfwGetWindowTitle(m_Window), m_Data.width, m_Data.height);
+        LOG_INFO("Created window [{}] ({}, {})", glfwGetWindowTitle(m_Window), m_Data.width, m_Data.height)
     }
 
     Window::~Window()

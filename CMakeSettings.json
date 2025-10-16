@@ -1,7 +1,7 @@
 ﻿{
   "configurations": [
     {
-      "name": "x64-Debug",
+      "name": "MSVC-Debug",
       "generator": "Ninja",
       "configurationType": "Debug",
       "inheritEnvironments": [ "msvc_x64_x64" ],
@@ -12,7 +12,7 @@
       "ctestCommandArgs": ""
     },
     {
-      "name": "x64-Release",
+      "name": "MSVC-Release",
       "generator": "Ninja",
       "configurationType": "RelWithDebInfo",
       "buildRoot": "${projectDir}\\build\\${name}",
@@ -23,7 +23,7 @@
       "inheritEnvironments": [ "msvc_x64_x64" ]
     },
     {
-      "name": "x64-Distribution",
+      "name": "MSVC-Distribution",
       "generator": "Ninja",
       "configurationType": "Release",
       "buildRoot": "${projectDir}\\build\\${name}",

@@ -21,13 +21,13 @@ namespace Renderer {
     bool VulkanSwapchain::AcquireNextImage(VkSemaphore& signalSemaphore, u64 timeout)
     {
         if (m_Swapchain == VK_NULL_HANDLE) {
-            LOG_ERROR("Swapchain not created");
+            LOG_ERROR("Swapchain not created")
             return false;
         }
 
         VkResult result = vkAcquireNextImageKHR(m_Context->GetDevice(), m_Swapchain, timeout, signalSemaphore, VK_NULL_HANDLE, &m_CurrentImageIndex);
         if (result != VK_SUCCESS) {
-            LOG_WARN("Failed to acquire swapchain image");
+            LOG_WARN("Failed to acquire swapchain image")
             return false;
         }
 
@@ -37,7 +37,7 @@ namespace Renderer {
     bool VulkanSwapchain::Present(const VkQueue& presentQueue, const VkSemaphore& waitSemaphore, const VkFence& signalFence) const
     {
         if (m_Swapchain == VK_NULL_HANDLE) {
-            LOG_ERROR("Swapchain not created");
+            LOG_ERROR("Swapchain not created")
             return false;
         }
 
@@ -61,7 +61,7 @@ namespace Renderer {
 
         VkResult result = vkQueuePresentKHR(presentQueue, &presentInfo);
         if (result != VK_SUCCESS) {
-            LOG_WARN("Failed to present swapchain");
+            LOG_WARN("Failed to present swapchain")
             return false;
         }
 
@@ -102,7 +102,7 @@ namespace Renderer {
     VkSurfaceFormatKHR VulkanSwapchain::ChooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& available) const
     {
         if (available.empty()) {
-            LOG_WARN("No surface formats available");
+            LOG_WARN("No surface formats available")
             return {};
         }
 
@@ -119,7 +119,7 @@ namespace Renderer {
                 return f;
         }
 
-        LOG_WARN("Requested swapchain surface format not available");
+        LOG_WARN("Requested swapchain surface format not available")
         return available.at(0);
     }
 
@@ -140,9 +140,8 @@ namespace Renderer {
 
     VkExtent2D VulkanSwapchain::ChooseExtent(const VkSurfaceCapabilitiesKHR& caps, const VkExtent2D& desired) const
     {
-        if (caps.currentExtent.width != std::numeric_limits<u32>::max()) {
+        if (caps.currentExtent.width != std::numeric_limits<u32>::max())
             return caps.currentExtent;
-        }
 
         VkExtent2D extent;
         extent.width = std::clamp(desired.width, caps.minImageExtent.width, caps.maxImageExtent.width);

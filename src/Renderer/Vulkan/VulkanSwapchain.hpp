@@ -29,7 +29,7 @@ namespace Renderer {
         inline u32 GetImageCount() const { return m_ImageCount; }
 
         inline const VkFormat& GetFormat() const { return m_Format; }
-        inline const VkPresentModeKHR GetPresentMode() const { return m_PresentMode; }
+        inline const VkPresentModeKHR& GetPresentMode() const { return m_PresentMode; }
 
         inline const VkExtent2D GetExtent() const { return m_Extent; }
         inline u32 GetWidth() const { return m_Extent.width; }

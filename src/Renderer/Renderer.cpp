@@ -42,7 +42,7 @@ namespace Renderer {
 
     void Renderer::RenderThreadLoop()
     {
-        LOG_INFO("Render thread running");
+        LOG_INFO("Render thread running")
 
         CreateResources();
 
@@ -119,6 +119,9 @@ namespace Renderer {
                 .pNext = nullptr,
                 .imageView = m_Swapchain->GetCurrentImageView(),
                 .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                .resolveMode = VK_RESOLVE_MODE_NONE,
+                .resolveImageView = VK_NULL_HANDLE,
+                .resolveImageLayout = VK_IMAGE_LAYOUT_UNDEFINED,
                 .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
                 .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
                 .clearValue = clearColor
@@ -133,6 +136,7 @@ namespace Renderer {
                     .extent = m_Swapchain->GetExtent()
                 },
                 .layerCount = 1,
+                .viewMask = 0,
                 .colorAttachmentCount = 1,
                 .pColorAttachments = &colorAttachmentInfo,
                 .pDepthAttachment = nullptr,
