@@ -41,6 +41,7 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/src
         src/Core/Events.hpp
         src/Core/Window.hpp
         src/Renderer/Renderer.hpp
+        src/Renderer/RenderGraph.hpp
         src/Renderer/Vulkan/VulkanTypes.hpp
         src/Renderer/Vulkan/VulkanContext.hpp
         src/Renderer/Vulkan/VulkanSwapchain.hpp
@@ -57,6 +58,7 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/src
         src/Core/Application.cpp
         src/Core/Window.cpp
         src/Renderer/Renderer.cpp
+        src/Renderer/RenderGraph.cpp
         src/Renderer/Vulkan/VulkanContext.cpp
         src/Renderer/Vulkan/VulkanSwapchain.cpp
         src/Renderer/Vulkan/VulkanShader.cpp
@@ -79,6 +81,8 @@ add_executable(${PROJECT_NAME}
 
     src/Renderer/Renderer.hpp
     src/Renderer/Renderer.cpp
+    src/Renderer/RenderGraph.hpp
+    src/Renderer/RenderGraph.cpp
 
     src/Renderer/Vulkan/VulkanTypes.hpp
     src/Renderer/Vulkan/VulkanContext.hpp
