@@ -2,6 +2,7 @@
 
 // TEMPORARY
 #include "Vulkan/VulkanShader.hpp"
+#include "RenderGraph.hpp"
 
 namespace Renderer {
 
@@ -83,102 +84,155 @@ namespace Renderer {
 
         vkResetFences(m_Context->GetDevice(), 1, &m_Sync.at(m_FrameIndex).inFlight);
 
+        RenderGraph rg;
+
+        ImageDesc swapchainDesc {
+            .width = m_Swapchain->GetWidth(),
+            .height = m_Swapchain->GetHeight(),
+            .format = m_Swapchain->GetFormat(),
+        };
+
+        ResourceHandle swapchainHandle = rg.CreateImage("Swapchain", swapchainDesc);
+
+        Scope<VulkanGraphicsPipeline> pipeline = CreateScope<VulkanGraphicsPipeline>(m_Context, m_PipelineConfig);
+
+        rg.AddPass("DrawTriangle",
+            [&](RenderGraph::PassBuilder& builder) {
+                builder.Writes(swapchainHandle, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+            },
+            [&](VkCommandBuffer cmd, const std::unordered_map<ResourceHandle, VkImageView>& imageViews) {
+                static constexpr VkClearValue clearColor = {{{ 0.0f, 0.0f, 0.0f, 1.0f }}};
+
+                VkRenderingAttachmentInfo colorAttachmentInfo {
+                    .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
+                    .pNext = nullptr,
+                    .imageView = imageViews.at(swapchainHandle),
+                    .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                    .resolveMode = VK_RESOLVE_MODE_NONE,
+                    .resolveImageView = VK_NULL_HANDLE,
+                    .resolveImageLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+                    .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+                    .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+                    .clearValue = clearColor
+                };
+
+                VkRenderingInfo renderingInfo {
+                    .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
+                    .pNext = nullptr,
+                    .flags = 0,
+                    .renderArea = {
+                        .offset = { 0, 0 },
+                        .extent = m_Swapchain->GetExtent()
+                    },
+                    .layerCount = 1,
+                    .viewMask = 0,
+                    .colorAttachmentCount = 1,
+                    .pColorAttachments = &colorAttachmentInfo,
+                    .pDepthAttachment = nullptr,
+                    .pStencilAttachment = nullptr
+                };
+
+                vkCmdBeginRendering(cmd, &renderingInfo);
+                pipeline->Bind(cmd);
+
+                VkViewport viewport {
+                    0.0f, 0.0f,
+                    static_cast<f32>(m_Swapchain->GetWidth()), static_cast<f32>(m_Swapchain->GetHeight()),
+                    0.0f, 1.0f,
+                };
+
+                VkRect2D scissor {
+                    { 0, 0 },
+                    m_Swapchain->GetExtent()
+                };
+
+                vkCmdSetViewport(cmd, 0, 1, &viewport);
+                vkCmdSetScissor(cmd, 0, 1, &scissor);
+
+                vkCmdDraw(cmd, 3, 1, 0, 0);
+
+                vkCmdEndRendering(cmd);
+            }
+        );
+
+        rg.AddPass("Present",
+            [&](RenderGraph::PassBuilder& builder) {
+                builder.Reads(swapchainHandle, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0);
+            },
+            nullptr
+        );
+
+        ExecutionPlan plan = rg.Compile();
+
+        std::unordered_map<ResourceHandle, VkImage> images;
+        std::unordered_map<ResourceHandle, VkImageView> imageViews;
+
+        images[swapchainHandle] = m_Swapchain->GetCurrentImage();
+        imageViews[swapchainHandle] = m_Swapchain->GetCurrentImageView();
+
         m_Commands.at(m_FrameIndex)->Record([&](const VkCommandBuffer& cmd) {
-            VkImageMemoryBarrier imageBarrier {
-                .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-                .pNext = nullptr,
-                .srcAccessMask = 0,
-                .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-                .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-                .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-                .image = m_Swapchain->GetCurrentImage(),
-                .subresourceRange = {
-                    .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-                    .baseMipLevel = 0,
-                    .levelCount = 1,
-                    .baseArrayLayer = 0,
-                    .layerCount = 1
+            std::unordered_map<ResourceHandle, VkImageLayout> currentLayouts;
+            currentLayouts[swapchainHandle] = VK_IMAGE_LAYOUT_UNDEFINED;
+
+            for (const auto& execPass : plan.orderedPasses) {
+                std::vector<VkImageMemoryBarrier> imageBarriers;
+                VkPipelineStageFlags srcStageMask = 0;
+                VkPipelineStageFlags dstStageMask = 0;
+
+                for (const auto& barrier : plan.barriers) {
+                    if (barrier.dstPass == execPass.pass) {
+                        VkImageLayout oldLayout = currentLayouts.at(barrier.resource);
+
+                        imageBarriers.push_back(VkImageMemoryBarrier {
+                            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+                            .pNext = nullptr,
+                            .srcAccessMask = barrier.srcAccessMask,
+                            .dstAccessMask = barrier.dstAccessMask,
+                            .oldLayout = oldLayout,
+                            .newLayout = barrier.newLayout,
+                            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                            .image = images.at(barrier.resource),
+                            .subresourceRange = {
+                                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                                .baseMipLevel = 0,
+                                .levelCount = 1,
+                                .baseArrayLayer = 0,
+                                .layerCount = 1
+                            }
+                        });
+                        srcStageMask |= barrier.srcStageMask;
+                        dstStageMask |= barrier.dstStageMask;
+                    }
                 }
-            };
 
-            vkCmdPipelineBarrier(cmd,
-                VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                0,
-                0, nullptr,
-                0, nullptr,
-                1, &imageBarrier
-            );
+                if (!imageBarriers.empty()) {
+                    if (srcStageMask == 0)
+                        srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 
-            static constexpr VkClearValue clearColor = {{{ 0.0f, 0.0f, 0.0f, 1.0f }}};
+                    if (dstStageMask == 0)
+                        dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
 
-            VkRenderingAttachmentInfo colorAttachmentInfo {
-                .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-                .pNext = nullptr,
-                .imageView = m_Swapchain->GetCurrentImageView(),
-                .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                .resolveMode = VK_RESOLVE_MODE_NONE,
-                .resolveImageView = VK_NULL_HANDLE,
-                .resolveImageLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-                .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-                .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-                .clearValue = clearColor
-            };
+                    vkCmdPipelineBarrier(cmd,
+                        srcStageMask,
+                        dstStageMask,
+                        0,
+                        0, nullptr,
+                        0, nullptr,
+                        static_cast<u32>(imageBarriers.size()),
+                        imageBarriers.data()
+                    );
 
-            VkRenderingInfo renderingInfo {
-                .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
-                .pNext = nullptr,
-                .flags = 0,
-                .renderArea = {
-                    .offset = { 0, 0 },
-                    .extent = m_Swapchain->GetExtent()
-                },
-                .layerCount = 1,
-                .viewMask = 0,
-                .colorAttachmentCount = 1,
-                .pColorAttachments = &colorAttachmentInfo,
-                .pDepthAttachment = nullptr,
-                .pStencilAttachment = nullptr
-            };
+                    for (const auto& b : plan.barriers) {
+                        if (b.dstPass == execPass.pass)
+                            currentLayouts[b.resource] = b.newLayout;
+                    }
+                }
 
-            vkCmdBeginRendering(cmd, &renderingInfo);
-
-            m_GraphicsPipeline->Bind(cmd);
-
-            VkViewport viewport {
-                .x = 0.0f, .y = 0.0f,
-                .width = static_cast<f32>(m_Swapchain->GetWidth()),
-                .height = static_cast<f32>(m_Swapchain->GetHeight()),
-                .minDepth = 0.0f,
-                .maxDepth = 1.0f
-            };
-            m_GraphicsPipeline->SetViewport(cmd, viewport);
-
-            VkRect2D scissor {
-                .offset = { 0, 0 },
-                .extent = m_Swapchain->GetExtent()
-            };
-            m_GraphicsPipeline->SetScissor(cmd, scissor);
-
-            vkCmdDraw(cmd, 3, 1, 0, 0);
-
-            vkCmdEndRendering(cmd);
-
-            imageBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-            imageBarrier.dstAccessMask = 0;
-            imageBarrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-            imageBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-            vkCmdPipelineBarrier(cmd,
-                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-                0,
-                0, nullptr,
-                0, nullptr,
-                1, &imageBarrier
-            );
+                const auto& passInfo = rg.GetPass(execPass.pass);
+                if (passInfo.record)
+                    passInfo.record(cmd, imageViews);
+            }
         });
 
         vkWaitForFences(m_Context->GetDevice(), 1, &m_Sync.at(m_FrameIndex).inPresent, VK_TRUE, std::numeric_limits<u64>::max());
@@ -191,6 +245,9 @@ namespace Renderer {
 
         vkResetFences(m_Context->GetDevice(), 1, &m_Sync.at(m_FrameIndex).inPresent);
         m_Swapchain->Present(m_Context->GetPresentQueue(), m_Sync.at(m_FrameIndex).renderFinished, m_Sync.at(m_FrameIndex).inPresent);
+
+        vkWaitForFences(m_Context->GetDevice(), 1, &m_Sync.at(m_FrameIndex).inFlight, VK_TRUE, std::numeric_limits<u64>::max());
+        vkWaitForFences(m_Context->GetDevice(), 1, &m_Sync.at(m_FrameIndex).inPresent, VK_TRUE, std::numeric_limits<u64>::max());
 
         m_FrameIndex = (m_FrameIndex + 1) % s_FrameInFlight;
     }
@@ -210,13 +267,12 @@ namespace Renderer {
         for (usize i = 0; i < s_FrameInFlight; ++i)
             m_Commands.at(i) = CreateScope<VulkanCommandRecorder>(m_Context, m_Context->GetGraphicsDeviceQueue());
 
-        VulkanGraphicsPipeline::Config graphicsPipelineConfig;
-        graphicsPipelineConfig.shaders.push_back(CreateRef<VulkanShader>(m_Context, "../shaders/triangle.vert.spv", VK_SHADER_STAGE_VERTEX_BIT));
-        graphicsPipelineConfig.shaders.push_back(CreateRef<VulkanShader>(m_Context, "../shaders/triangle.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT));
-        graphicsPipelineConfig.frontFace = VK_FRONT_FACE_CLOCKWISE;
-        graphicsPipelineConfig.depthTestEnabled = false;
-        graphicsPipelineConfig.depthWriteEnabled = false;
-        graphicsPipelineConfig.colorBlendAttachments.push_back(VkPipelineColorBlendAttachmentState {
+        m_PipelineConfig.shaders.push_back(CreateRef<VulkanShader>(m_Context, "../shaders/triangle.vert.spv", VK_SHADER_STAGE_VERTEX_BIT));
+        m_PipelineConfig.shaders.push_back(CreateRef<VulkanShader>(m_Context, "../shaders/triangle.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT));
+        m_PipelineConfig.frontFace = VK_FRONT_FACE_CLOCKWISE;
+        m_PipelineConfig.depthTestEnabled = false;
+        m_PipelineConfig.depthWriteEnabled = false;
+        m_PipelineConfig.colorBlendAttachments.push_back(VkPipelineColorBlendAttachmentState {
             .blendEnable = VK_TRUE,
             .srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
             .dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
@@ -226,9 +282,7 @@ namespace Renderer {
             .alphaBlendOp = VK_BLEND_OP_ADD,
             .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT
         });
-        graphicsPipelineConfig.colorAttachmentFormats.push_back(m_Swapchain->GetFormat());
-
-        m_GraphicsPipeline = CreateScope<VulkanGraphicsPipeline>(m_Context, graphicsPipelineConfig);
+        m_PipelineConfig.colorAttachmentFormats.push_back(m_Swapchain->GetFormat());
 
         static constexpr VkSemaphoreCreateInfo semaphoreInfo {
             .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
@@ -259,7 +313,6 @@ namespace Renderer {
             vkDestroySemaphore(m_Context->GetDevice(), m_Sync.at(i).renderFinished, nullptr);
             vkDestroySemaphore(m_Context->GetDevice(), m_Sync.at(i).imageAvailable, nullptr);
         }
-        m_GraphicsPipeline.reset();
         for (auto& command : m_Commands)
             command.reset();
         m_Swapchain.reset();

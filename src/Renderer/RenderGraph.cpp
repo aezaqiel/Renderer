@@ -32,8 +32,6 @@ namespace Renderer {
 
     ExecutionPlan RenderGraph::Compile()
     {
-        LOG_INFO("[RenderGraph] Compiling: {} passes, {} resources", m_Passes.size(), m_Resources.size());
-
         std::vector<std::vector<std::pair<PassHandle, AccessInfo>>> resourceUses(m_Resources.size());
         for (PassHandle pi = 0; pi < m_Passes.size(); ++pi) {
             for (const auto& ai : m_Passes[pi].accesses) {
@@ -87,7 +85,6 @@ namespace Renderer {
             }
         }
 
-        LOG_INFO("[RenderGraph] Alive passes: {}", alivePasses.size());
         if (alivePasses.empty()) return {};
 
         usize N = alivePasses.size();
@@ -248,6 +245,7 @@ namespace Renderer {
         }
 
         totalAllocs = aliasedPoolSize + nextNonAliasedId;
+        (void)totalAllocs;
 
         std::vector<Barrier> barriers;
         for (ResourceHandle r = 0; r < m_Resources.size(); ++r) {
@@ -265,7 +263,7 @@ namespace Renderer {
             {
                 auto& u = uses.front();
                 barriers.push_back(Barrier {
-                    .srcPass = 0,
+                    .srcPass = std::numeric_limits<u32>::max(),
                     .dstPass = static_cast<PassHandle>(u.first),
                     .resource = r,
                     .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
@@ -315,12 +313,11 @@ namespace Renderer {
         }
 
         for (auto& b : barriers) {
-            if (b.srcPass != 0) b.srcPass = execOrder[b.srcPass];
-            if (b.dstPass != 0) b.dstPass = execOrder[b.dstPass];
+            if (b.srcPass != std::numeric_limits<u32>::max()) b.srcPass = execOrder[b.srcPass];
+            if (b.dstPass != std::numeric_limits<u32>::max()) b.dstPass = execOrder[b.dstPass];
             plan.barriers.push_back(b);
         }
 
-        LOG_INFO("[RenderGraph] Exec passes: {}, Barriers: {}, Allocs: {}", plan.orderedPasses.size(), plan.barriers.size(), totalAllocs);
         return plan;
     }
 

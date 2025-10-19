@@ -69,7 +69,7 @@ namespace Renderer {
         Ref<VulkanContext> m_Context;
         Scope<VulkanSwapchain> m_Swapchain;
 
-        Scope<VulkanGraphicsPipeline> m_GraphicsPipeline;
+        VulkanGraphicsPipeline::Config m_PipelineConfig;
 
         inline static constexpr usize s_FrameInFlight { 2 };
 
